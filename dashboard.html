@@ -78,8 +78,8 @@ const ago=t=>{const m=Math.floor((Date.now()-t)/60000);if(m<1)return 'เมื�
 let data=[],filter='all',markers={},known=null,last='',fitted=false,addMode=false,pend=null;
 
 const map=L.map('map').setView([SCHOOL.lat,SCHOOL.lng],SCHOOL.zoom);
-const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,attribution:'Esri'}).addTo(map);
-const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19});
+const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:18,attribution:'Esri'}).addTo(map);
+const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,maxNativeZoom:19,attribution:'© OpenStreetMap'});
 L.control.layers({'ภาพถ่ายดาวเทียม':sat,'แผนที่ถนน':osm}).addTo(map);
 
 const me=sessionStorage.getItem('name')||'',myUser=sessionStorage.getItem('user')||'';
