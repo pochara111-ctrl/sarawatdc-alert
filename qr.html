@@ -28,7 +28,7 @@ const $=id=>document.getElementById(id);if(!sessionStorage.getItem('tok'))locati
 let pts=[];try{pts=JSON.parse(localStorage.getItem('qrpts')||'[]');}catch(e){}
 const save=()=>{try{localStorage.setItem('qrpts',JSON.stringify(pts));}catch(e){}};
 const map=L.map('map').setView([SCHOOL.lat,SCHOOL.lng],SCHOOL.zoom);
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,attribution:'Esri'}).addTo(map);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:18,attribution:'Esri'}).addTo(map);
 let cur=null,mk=null;
 function pick(ll){cur={lat:+ll.lat.toFixed(6),lng:+ll.lng.toFixed(6)};if(mk)mk.setLatLng(ll);else mk=L.marker(ll,{draggable:true}).addTo(map).on('dragend',()=>pick(mk.getLatLng()));
   $('st').className='status ok';$('st').lastChild.textContent='เลือกพิกัดแล้ว: '+cur.lat+', '+cur.lng;}
