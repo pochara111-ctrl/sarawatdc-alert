@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="th" data-def="dark"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>แผนที่เหตุการณ์ – โรงเรียนเดชะปัตตนยานุกูล</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="css/map.css"/>
+<link rel="stylesheet" href="css/ui.css"/>
+<link rel="stylesheet" href="css/responsive.css"/>
+<link rel="manifest" href="manifest.webmanifest"/><meta name="theme-color" content="#14306b"/>
+</head><body>
+<header class="map-hud">
+  <div class="hud-left">
+    <div class="hud-logo-wrap"><img src="school-logo.png" class="hud-logo" alt="" onerror="this.replaceWith('🏫')"/></div>
+    <div><div class="hud-title">ระบบแจ้งเหตุ <span class="hud-accent">•</span> เดชะปัตตนยานุกูล</div>
+    <div class="hud-subtitle">แผนที่เหตุการณ์ในโรงเรียนแบบเรียลไทม์</div></div>
+  </div>
+  <div class="hud-stats">
+    <div class="stat-item"><div class="stat-num" id="s-new" style="color:var(--accent)">0</div><div class="stat-label">รอดำเนินการ</div></div><div class="stat-divider"></div>
+    <div class="stat-item"><div class="stat-num" id="s-pro" style="color:var(--gold)">0</div><div class="stat-label">กำลังดำเนินการ</div></div><div class="stat-divider"></div>
+    <div class="stat-item"><div class="stat-num" id="s-done" style="color:#4ade9a">0</div><div class="stat-label">เสร็จสิ้น</div></div>
+  </div>
+  <div class="hud-right">
+    <div class="live-badge"><span class="live-dot"></span><span class="live-text">LIVE</span></div>
+    <div><div class="hud-clock" id="clock">--:--:--</div><div class="hud-date" id="date"></div></div>
+    <span class="hud-user" id="uname"></span><a class="hud-link" href="search.html" title="ค้นประวัติ">🔎</a><a class="hud-link" href="stats.html" title="สถิติ">📊</a><a class="hud-link" href="qr.html" title="ป้าย QR">▦</a><a class="hud-link" href="admin.html" title="บัญชี">⚙</a><span id="hud-tools"></span><button class="hud-btn" id="bell" title="ศูนย์แจ้งเตือน" aria-label="แจ้งเตือน">🔔<span class="bn" id="bell-n" style="display:none">0</span></button><button class="hud-btn" id="hmenu" title="เมนู" aria-label="เมนู">☰</button>
+    <button class="btn-logout-map" id="logout">ออก</button>
+  </div>
+</header>
+<div class="pop-card" id="bell-pop"><div class="bp-h"><b>🔔 ศูนย์แจ้งเตือน</b><button id="bp-clear">ล้างทั้งหมด</button></div>
+  <div class="bp-set"><label><input type="checkbox" id="np-sound"/> 🔊 เสียง</label><label><input type="checkbox" id="np-vib"/> 📳 สั่น</label><label><input type="checkbox" id="np-sys"/> 🖥️ แจ้งเตือนบนอุปกรณ์</label></div>
+  <div class="bp-hint" id="bp-hint"></div><div class="bp-l" id="bp-l"></div></div>
+<div class="pop-card menu" id="menu-pop"><a href="search.html">🔎 ค้นประวัติ</a><a href="stats.html">📊 สถิติและรายงาน</a><a href="qr.html">▦ ป้าย QR แยกตามจุด</a><a href="admin.html">⚙ จัดการบัญชี</a><button id="mn-prefs">🌓 โหมดมืด/สว่าง</button><button id="mn-out">⏻ ออกจากระบบ</button></div>
+<div id="map"></div>
+<aside class="side-panel"><div class="sheet-handle" id="sheet-h" aria-label="ลากเพื่อขยาย/ย่อรายการ"><i></i></div>
+  <div class="panel-header"><span>🚨 รายการแจ้งเหตุ</span><span class="mini" id="mini">—</span><button class="chip-add" id="btn-add">+ เพิ่มจุด</button></div>
+  <div class="panel-tools"><input id="q" placeholder="🔍 ค้นหาประเภท สถานที่ ผู้แจ้ง..."/><div class="chips" id="chips"></div></div>
+  <div class="sel-banner" id="selb" style="display:none"></div>
+  <div class="roster"><div class="ro-h" id="ro-h"></div><div class="ro-b" id="ro-b"></div></div>
+  <div class="panel-list" id="list"></div>
+</aside>
+<button class="panel-toggle" id="ptoggle">☰</button>
+<div id="toast"></div>
+<button class="map-fab heat" id="heatb" title="Heatmap จุดเกิดเหตุ">🔥</button>
+<button class="map-fab" id="fab" title="ตำแหน่งของฉัน" aria-label="ตำแหน่งของฉัน">🎯</button>
+<div class="modal" id="add-modal"><div class="modal-box">
+  <h3>➕ เพิ่มเหตุ (ศูนย์แจ้งเหตุ / เจ้าหน้าที่)</h3>
+  <button type="button" class="gps-btn" id="a-gps">📍 ใช้ตำแหน่งปัจจุบันของฉันเป็นจุดเกิดเหตุ</button><div class="pend-lb" id="a-pl"></div>
+  <label class="fl">รับแจ้งจากช่องทาง<select id="a-ch"><option>โทรศัพท์</option><option>มาแจ้งที่ศูนย์แจ้งเหตุ</option><option>วิทยุสื่อสาร</option><option>หน้าเว็บ</option><option>LINE</option><option>Facebook</option><option>Instagram</option><option>อื่นๆ</option></select></label>
+  <select id="a-type"><option value="">— เลือกประเภทเหตุ —</option><option>🤒 นักเรียนเจ็บป่วย</option><option>🥊 ทะเลาะวิวาท</option><option>🚬 สูบบุหรี่ / บุหรี่ไฟฟ้า</option><option>📌 อื่นๆ</option></select>
+  <label class="fl">ความรุนแรง<select id="a-sev"><option value="low">ต่ำ</option><option value="mid" selected>กลาง</option><option value="high">สูง</option></select></label>
+  <div class="two"><input id="a-nm" placeholder="ชื่อผู้แจ้ง"/><input id="a-ph" type="tel" placeholder="เบอร์โทรผู้แจ้ง"/></div>
+  <div class="two"><input id="a-cls" placeholder="ชั้น/ห้อง"/><input id="a-sid" placeholder="รหัสนักเรียน"/></div>
+  <input id="a-loc" placeholder="รายละเอียดสถานที่ เช่น อาคาร 3 ห้องน้ำชั้น 2"/>
+  <input id="a-who" placeholder="นักเรียนที่เกี่ยวข้อง (ถ้าทราบ)"/>
+  <label style="font-size:.85rem;display:flex;gap:.5rem;align-items:center"><input type="checkbox" id="a-urg" style="width:auto"/> 🔴 เหตุฉุกเฉิน</label>
+  <textarea id="a-detail" rows="2" placeholder="รายละเอียดเพิ่มเติม"></textarea>
+  <div class="modal-act"><button id="a-cancel">ยกเลิก</button><button class="pri" id="a-ok">บันทึก</button></div>
+</div></div>
+<div class="modal" id="mg-modal"><div class="modal-box"><h3>🔗 รวมเหตุซ้ำ</h3><p style="font-size:.85rem;color:#556">เลือกเหตุหลักที่จะรวมเข้าด้วยกัน (เหตุนี้จะถูกปิดเป็น "ซ้ำ")</p><select id="mg-sel"></select>
+  <div class="modal-act"><button id="mg-cancel">ยกเลิก</button><button class="pri" id="mg-ok">รวมเหตุ</button></div></div></div>
+<div class="modal" id="hs-modal"><div class="modal-box"><h3>🕘 ประวัติการดำเนินการ</h3><div id="hs-body" class="hs"></div>
+  <div class="modal-act"><button id="hs-close">ปิด</button></div></div></div>
+<div id="lb" onclick="this.style.display='none'"><img id="lbi" alt=""/></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="js/ui.js"></script><script src="js/fx.js"></script>
+<script src="js/config.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const token=sessionStorage.getItem('tok'),isAdmin=sessionStorage.getItem('role')==='admin';
+if(!token)location.href='index.html';
+$('uname').textContent=sessionStorage.getItem('name')||'';
+const ST={new:'รอดำเนินการ',progress:'กำลังดำเนินการ',done:'เสร็จสิ้น'},COL={new:'#e63946',progress:'#f4a261',done:'#2d9d78'};
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const emoji=t=>[...String(t)][0]||'📌', label=t=>String(t).replace(/^\S+\s*/,'')||String(t);
+const ago=t=>{const m=Math.floor((Date.now()-t)/60000);if(m<1)return 'เมื่อสักครู่';if(m<60)return m+' นาทีที่แล้ว';const h=Math.floor(m/60);return h<24?h+' ชม.ที่แล้ว':new Date(t).toLocaleDateString('th-TH',{day:'numeric',month:'short'});};
+let data=[],filter='all',markers={},known=null,last='',fitted=false,addMode=false,pend=null;
+
+const map=L.map('map').setView([SCHOOL.lat,SCHOOL.lng],SCHOOL.zoom);
+const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,attribution:'Esri'}).addTo(map);
+const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19});
+L.control.layers({'ภาพถ่ายดาวเทียม':sat,'แผนที่ถนน':osm}).addTo(map);
+
+const me=sessionStorage.getItem('name')||'',myUser=sessionStorage.getItem('user')||'';
+let selId=null,staffC=[],roOpen=true,heatOn=false,heat=null,fp=new URLSearchParams(location.search).get('focus');
+const SEVL={low:'ต่ำ',mid:'กลาง',high:'สูง'},NEXTSEV={low:'mid',mid:'high',high:'low'};
+const acts=i=>`${i.phone?`<a class="ab" href="tel:${esc(i.phone)}">📞 โทร</a>`:''}<a class="ab" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${i.lat},${i.lng}">🧭 นำทาง</a>${i.status==='new'?`<button data-act="progress" data-id="${i.id}">รับเรื่อง</button>`:''}${i.status==='progress'?`<button data-act="done" data-id="${i.id}">ปิดเรื่อง</button>`:''}${i.status!=='done'?`<button data-act="assign" data-id="${i.id}">👤 มอบหมาย</button><button data-act="sev" data-id="${i.id}">⚑ ความรุนแรง</button><button data-act="merge" data-id="${i.id}">🔗 รวมซ้ำ</button>`:''}<button data-act="hist" data-id="${i.id}">🕘 ประวัติ</button>${isAdmin?`<button class="del" data-act="del" data-id="${i.id}">ลบ</button>`:''}`;
+const photos=i=>i.photoIds.length?`<div class="ph">${i.photoIds.map(p=>`<img data-act="ph" data-pid="${p}" alt="">`).join('')}</div>`:'';
+const rows0=i=>`${i.urgent?'<div class="ic-row" style="color:#ff6b76;font-weight:800">🔴 เหตุฉุกเฉิน</div>':''}<div class="ic-row">📍 ${esc(i.location)||'-'}</div><div class="ic-row">👤 ${esc(i.reporter)} (${esc(i.role)})</div>${i.phone?`<div class="ic-row">📞 <a href="tel:${esc(i.phone)}" style="color:inherit">${esc(i.phone)}</a>${i.cls?' · ชั้น '+esc(i.cls):''}${i.sid?' · รหัส '+esc(i.sid):''}</div>`:''}${i.ip?`<div class="ic-row" style="opacity:.7;font-size:.75rem">🌐 ${esc(i.ip)}${i.gps?' · 📡 '+esc(i.gps):''}<br>💻 ${esc(i.ua)}</div>`:''}${i.students?`<div class="ic-row">🎒 ${esc(i.students)}</div>`:''}${i.detail?`<div class="ic-row">📝 ${esc(i.detail)}</div>`:''}${i.note?`<div class="ic-row" style="color:#7ee2a8">✅ ผล: ${esc(i.note)}</div>`:''}${i.code?`<div class="ic-row" style="opacity:.6;font-size:.72rem">รหัสเรื่อง ${esc(i.code)}</div>`:''}`;
+
+const sevB=i=>i.severity&&i.severity!=='mid'?`<span class="sev ${i.severity}">${SEVL[i.severity]}</span>`:'';
+const staleCls=i=>{if(i.status!=='new')return '';const m=(Date.now()-i.time)/60000;return m>30?'stale2':m>10?'stale1':'';};
+function refreshStale(){document.querySelectorAll('.inc-card').forEach(c=>{const i=data.find(x=>x.id===c.dataset.id);if(!i)return;c.classList.remove('stale1','stale2');const s=staleCls(i);if(s)c.classList.add(s);});}
+const nameOf=u=>{const o=staffC.find(s=>s.username===u);return o?o.name:u;};
+const assg=i=>(i.assigneeIds&&i.assigneeIds.length)?`<div class="ic-row asg">🧑‍✈️ ${i.assigneeIds.map(u=>`<span class="chipu">${esc(nameOf(u))}${i.status!=='done'?`<b data-act="unassign" data-id="${i.id}" data-u="${esc(u)}" title="ยกเลิกการมอบหมาย">✕</b>`:''}</span>`).join('')}</div>`:(i.status!=='done'?'<div class="ic-row" style="opacity:.55">🧑‍✈️ ยังไม่มอบหมาย — คลิกเหตุนี้ แล้วเลือกเจ้าหน้าที่ที่ว่าง</div>':'');
+const rows=i=>`<div class="ic-row" style="opacity:.7;font-size:.75rem">📡 ช่องทาง: ${esc(i.channel||'หน้าเว็บ')}</div>`+assg(i)+rows0(i);
+function busyMap(){const m={};data.forEach(i=>{if(i.status!=='done'&&!i.mergedInto)(i.assigneeIds||[]).forEach(u=>m[u]=i);});return m;}
+function renderRoster(){
+  const bm=busyMap(),sel=data.find(x=>x.id===selId),free=staffC.filter(s=>!bm[s.username]).length;
+  $('ro-h').innerHTML=`<span>👮 เจ้าหน้าที่ — <b style="color:#4ade9a">ว่าง ${free}</b> · <b style="color:#f4a261">ติดภารกิจ ${staffC.length-free}</b></span><span>${roOpen?'▾':'▸'}</span>`;
+  $('ro-b').style.display=roOpen?'':'none';
+  const g={};staffC.forEach(s=>(g[s.unit||'อื่นๆ']=g[s.unit||'อื่นๆ']||[]).push(s));
+  $('ro-b').innerHTML=Object.keys(g).map(u=>`<div class="ro-g">${esc(u)}</div>`+g[u].map(s=>{const b=bm[s.username];
+    return `<button class="off ${b?'busy':'free'}" data-u="${esc(s.username)}" ${b?'disabled':''} title="${b?'ติดภารกิจเลขที่ #'+esc(b.no):'คลิกเพื่อมอบหมายให้เหตุที่เลือก'}"><i></i><span class="on"><b>${esc(s.name)}</b><small>${esc(s.position||'')}</small></span><em>${b?'ติดภารกิจ #'+esc(b.no):'ว่าง'}</em></button>`;}).join('')).join('')||'<div class="empty" style="padding:.8rem">ยังไม่มีรายชื่อเจ้าหน้าที่ (เพิ่มได้ที่ ⚙ จัดการบัญชี)</div>';
+  const sb=$('selb');
+  if(sel&&sel.status!=='done'&&!sel.mergedInto){sb.style.display='flex';sb.innerHTML=`<span>📌 เหตุ <b>#${esc(sel.no)}</b> ${esc(sel.type)} — คลิกชื่อเจ้าหน้าที่ที่ <b style="color:#4ade9a">ว่าง</b> เพื่อมอบหมาย</span><button id="selx">✕</button>`;}
+  else{sb.style.display='none';if(sel)selId=null;}
+}
+function select(id){selId=id;roOpen=true;document.querySelectorAll('.inc-card').forEach(c=>c.classList.toggle('sel',c.dataset.id===id));renderRoster();}
+async function loadStaff(){try{staffC=(await api('staffNames',{token},true)).items;renderRoster();render();}catch(e){}}
+function setHeat(on){if(on&&!window.L.heatLayer){return UI.toast('โหลด heatmap ไม่สำเร็จ','err');}heatOn=on;$('heatb').classList.toggle('on',on);render();}
+let mgId=null;
+function openMerge(id){mgId=id;const m=data.find(x=>x.id===id);if(!m)return;
+  const c=data.filter(x=>x.id!==id&&x.status!=='done'&&!x.mergedInto).map(x=>({x,d:map.distance([m.lat,m.lng],[x.lat,x.lng])})).sort((a,b)=>a.d-b.d);
+  $('mg-sel').innerHTML=c.length?c.map(o=>`<option value="${o.x.id}">#${esc(o.x.no)} ${esc(o.x.type)} • ${esc(o.x.location||'-')} (${Math.round(o.d)} ม.)</option>`).join(''):'<option value="">ไม่มีเหตุอื่นที่ยังไม่ปิด</option>';
+  $('mg-modal').style.display='flex';}
+function visible(){const q=$('q').value.trim().toLowerCase();
+  return data.filter(i=>!i.mergedInto&&(filter==='all'||(filter==='mine'?(i.assigneeIds||[]).includes(myUser)&&i.status!=='done':i.status===filter))&&(!q||[i.type,i.location,i.reporter,i.students,i.detail,i.sid,i.phone,i.cls].join(' ').toLowerCase().includes(q)));}
+function render(){
+  const live=data.filter(i=>!i.mergedInto),c=k=>k==='all'?live.length:live.filter(i=>i.status===k).length;
+  UI.count($('s-new'),c('new'));UI.count($('s-pro'),c('progress'));UI.count($('s-done'),c('done'));
+  const cm=live.filter(i=>(i.assigneeIds||[]).includes(myUser)&&i.status!=='done').length;
+  $('chips').innerHTML=['all','new','progress','done','mine'].map(k=>`<button class="chip ${filter===k?'on':''}" data-chip="${k}">${k==='all'?'ทั้งหมด':k==='mine'?'ของฉัน':ST[k]} (${k==='mine'?cm:c(k)})</button>`).join('');
+  const v=visible();
+  $('list').innerHTML=v.length?v.map(i=>`<div class="inc-card ${i.status}${i.urgent?' urg':''} ${staleCls(i)}${selId===i.id?' sel':''}" data-id="${i.id}">
+    <div class="ic-top"><span class="ic-type"><span class="no">#${esc(i.no)}</span> ${sevB(i)}${i.urgent?'<span class="urgent">ฉุกเฉิน</span> ':''}${esc(i.type)}</span><span class="tag ${i.status}">${ST[i.status]}</span></div>
+    ${rows(i)}${photos(i)}<div class="ic-time">⏱ ${ago(i.time)}${i.handledBy?' · โดย '+esc(i.handledBy):''}</div>
+    <div class="acts">${acts(i)}</div></div>`).join(''):'<div class="empty">ยังไม่มีเหตุการณ์<br>ระบบจะแจ้งเตือนเมื่อมีผู้แจ้งเหตุ</div>';
+  Object.values(markers).forEach(m=>map.removeLayer(m));markers={};
+  v.forEach(i=>{const icon=L.divIcon({className:'',iconSize:[70,52],iconAnchor:[35,16],popupAnchor:[0,-14],
+      html:`<div class="m-wrap"><div class="m-pin ${i.status}${i.urgent?' urg':''}" style="background:${COL[i.status]}">${esc(emoji(i.type))}</div><div class="m-label">${esc(label(i.type))}</div></div>`});
+    markers[i.id]=L.marker([i.lat,i.lng],{icon}).addTo(map).bindPopup(`<div class="pp-title">#${esc(i.no)} ${esc(i.type)} · ${ST[i.status]}</div>${rows(i)}${photos(i)}<div class="acts">${acts(i)}</div>`,{maxWidth:300,className:'custom-popup'}).on('click',()=>select(i.id));});
+  if(heatOn){Object.values(markers).forEach(m=>map.removeLayer(m));if(!heat)heat=L.heatLayer([],{radius:35,blur:25,maxZoom:19}).addTo(map);heat.setLatLngs(live.map(i=>[i.lat,i.lng,i.severity==='high'?1:i.severity==='low'?.35:.6]));}else if(heat){map.removeLayer(heat);heat=null;}
+  if(!fitted&&v.length){fitted=true;map.fitBounds(v.map(i=>[i.lat,i.lng]),{padding:[60,60],maxZoom:19});}
+  hydrate();renderRoster();miniStats();
+}
+const cache={};
+function hydrate(){document.querySelectorAll('img[data-pid]:not([src])').forEach(async el=>{
+  const id=el.dataset.pid;
+  try{cache[id]=cache[id]||api('photo',{token,id},true).then(j=>j.data);el.src=await cache[id];}
+  catch(e){delete cache[id];el.alt='โหลดรูปไม่ได้';}});}
+map.on('popupopen',hydrate);
+
+function toast(m,ms=4000,type){UI.toast(m,{type:type||(/^🚨/.test(m)?'alert':/^✅/.test(m)?'ok':'info'),ms});}
+const AL={created:['📨','แจ้งเหตุ'],assign:['👤','มอบหมาย'],progress:['🚑','รับเรื่อง/กำลังดำเนินการ'],done:['✅','ปิดเรื่อง'],deleted:['🗑️','ลบ'],unassign:['↩️','ยกเลิกมอบหมาย'],severity:['⚑','ความรุนแรง'],merged:['🔗','รวมเหตุซ้ำ']};
+async function showHist(id){$('hs-body').innerHTML=UI.skeleton(2);$('hs-modal').style.display='flex';
+  try{const j=await api('history',{token,id});
+    $('hs-body').innerHTML=j.items.length?j.items.map(h=>{const a=AL[h.action]||['•',h.action];return `<div class="hs-i"><span>${a[0]}</span><div><b>${a[1]}</b> · ${esc(h.user)}<br><small>${new Date(+h.time).toLocaleString('th-TH',{dateStyle:'medium',timeStyle:'short'})}${h.detail?' — '+esc(h.detail):''}</small></div></div>`;}).join(''):'<div style="opacity:.6;text-align:center;padding:1rem">ไม่มีประวัติ</div>';
+  }catch(e){$('hs-body').innerHTML='';UI.toast(e.message,'err');}}
+$('hs-close').onclick=()=>$('hs-modal').style.display='none';
+/* ============ ศูนย์แจ้งเตือนในหน้าเว็บ ============ */
+const notes=[];
+const NI={new:'🚨',urgent:'🔴',assigned:'🧑‍✈️',stale:'⏰',info:'💬'};
+function renderNotes(){const un=notes.filter(n=>!n.read).length,b=$('bell-n');b.style.display=un?'grid':'none';b.textContent=un>9?'9+':un;$('bell').classList.toggle('ring',un>0);
+  $('bp-l').innerHTML=notes.length?notes.map((n,i)=>`<div class="bp-i ${n.read?'':'un'}" data-i="${i}"><span class="bi">${NI[n.kind]||'💬'}</span><div><b>${esc(n.title)}</b><span>${esc(n.msg)}</span><small>${ago(n.t)}</small></div></div>`).join(''):'<div class="bp-e">ยังไม่มีการแจ้งเตือน<br><small>เหตุใหม่ เหตุฉุกเฉิน และงานที่ได้รับมอบหมายจะแสดงที่นี่</small></div>';}
+function flashTitle(){if(tf)return;let on=true;tf=setInterval(()=>{document.title=on?('🔔 ('+notes.filter(n=>!n.read).length+') มีเหตุใหม่!'):BASE_T;on=!on;},1000);}
+function pushNote(kind,title,msg,id,urgent){notes.unshift({t:Date.now(),read:false,kind,title,msg,id});if(notes.length>50)notes.pop();renderNotes();
+  if(document.hidden||!document.hasFocus()){UI.sys.show(title,msg,{id,urgent});flashTitle();}}
+function jump(id){if(!id)return;select(id);focusInc(id);if(matchMedia('(max-width:768px)').matches)setSheet('half');}
+function announce(fresh){if(!fresh.length)return;
+  const u=fresh.filter(x=>x.urgent),n=fresh[0],txt=i=>'#'+i.no+' '+i.type+(i.location?' • '+i.location:'');
+  fresh.forEach(i=>pushNote(i.urgent?'urgent':'new',i.urgent?'เหตุฉุกเฉิน!':'เหตุใหม่',txt(i),i.id,!!i.urgent));
+  if(u.length){const x=u[0];UI.popup({tone:'urgent',icon:'🚨',title:u.length>1?'เหตุฉุกเฉิน '+u.length+' รายการ!':'เหตุฉุกเฉิน!',msg:txt(x),sub:(x.reporter?'ผู้แจ้ง: '+x.reporter:'')+(x.phone?' • '+x.phone:''),siren:true,persist:true,
+    actions:[{label:'📍 ดูตำแหน่งบนแผนที่',primary:true,onClick:()=>jump(x.id)},{label:'🙋 รับเรื่องนี้',onClick:async()=>{try{await api('update',{token,id:x.id,status:'progress'});UI.toast('รับเรื่องแล้ว','ok');await load(true);jump(x.id);}catch(e){UI.toast(e.message,'err');}}},{label:'รับทราบ'}]});}
+  else UI.toast(txt(n)+(fresh.length>1?'  (+'+(fresh.length-1)+' รายการ)':''),{type:'alert',icon:'🚨',title:'เหตุใหม่',action:{label:'ดู',fn:()=>jump(n.id)},ms:9000});
+  if(!u.length){UI.sound('ding');UI.vibrate([150,80,150]);}}
+function checkAssigned(){const mine=new Set(data.filter(i=>(i.assigneeIds||[]).includes(myUser)&&i.status!=='done'&&!i.mergedInto).map(i=>i.id));
+  if(prevAssigned){mine.forEach(id=>{if(!prevAssigned.has(id)){const i=data.find(x=>x.id===id);
+    pushNote('assigned','คุณได้รับมอบหมายภารกิจ','#'+i.no+' '+i.type+(i.location?' • '+i.location:''),id,true);
+    UI.popup({tone:'info',icon:'🧑‍✈️',title:'คุณได้รับมอบหมายภารกิจ',msg:'#'+i.no+' '+i.type,sub:i.location||'',persist:true,actions:[{label:'📍 ไปยังจุดเกิดเหตุ',primary:true,onClick:()=>jump(id)},{label:'รับทราบ'}]});}});}
+  prevAssigned=mine;}
+function staleCheck(){const s=data.filter(i=>i.status==='new'&&!i.mergedInto&&Date.now()-i.time>30*60000&&!staleDone.has(i.id));if(!s.length)return;
+  s.forEach(i=>staleDone.add(i.id));
+  pushNote('stale','เหตุรอนานเกิน 30 นาที',s.length>1?s.length+' เหตุยังไม่มีผู้รับเรื่อง':'#'+s[0].no+' '+s[0].type+' ยังไม่มีผู้รับเรื่อง',s[0].id,true);
+  UI.toast(s.length>1?s.length+' เหตุยังไม่มีผู้รับเรื่อง':'#'+s[0].no+' '+s[0].type+' ยังไม่มีผู้รับเรื่อง',{type:'alert',icon:'⏰',title:'รอนานเกิน 30 นาที',action:{label:'ดู',fn:()=>jump(s[0].id)},ms:9000});UI.sound('ding');}
+function pops(which){const bp=$('bell-pop'),mp=$('menu-pop'),op=which==='bell'?bp:mp;
+  const open=op.classList.contains('open');bp.classList.remove('open');mp.classList.remove('open');
+  if(!open){op.classList.add('open');if(which==='bell'){notes.forEach(n=>n.read=true);renderNotes();syncNP();}}}
+function syncNP(){const p=UI.pref();$('np-sound').checked=p.sound;$('np-vib').checked=p.vibrate;
+  const st=UI.sys.state();$('np-sys').checked=p.sys&&st==='granted';$('np-sys').disabled=st==='unsupported'||st==='denied';
+  $('bp-hint').textContent=st==='unsupported'?'อุปกรณ์/เบราว์เซอร์นี้ไม่รองรับแจ้งเตือนบนอุปกรณ์ (iPhone ต้องเพิ่มหน้านี้ไว้ที่หน้าจอโฮมก่อน)':st==='denied'?'ถูกปิดสิทธิ์แจ้งเตือนในเบราว์เซอร์ — เปิดได้ที่การตั้งค่าเว็บไซต์':'เสียงและป๊อปอัปทำงานขณะเปิดหน้านี้ค้างไว้ • เปิด "แจ้งเตือนบนอุปกรณ์" เพื่อให้เด้งแม้ย่อหน้าต่าง';}
+$('bell').onclick=e=>{e.stopPropagation();pops('bell');};$('hmenu').onclick=e=>{e.stopPropagation();pops('menu');};
+document.addEventListener('click',e=>{if(!e.target.closest('.pop-card'))document.querySelectorAll('.pop-card.open').forEach(x=>x.classList.remove('open'));});
+$('bp-clear').onclick=()=>{notes.length=0;renderNotes();};
+$('bp-l').onclick=e=>{const i=e.target.closest('.bp-i');if(!i)return;const n=notes[+i.dataset.i];$('bell-pop').classList.remove('open');if(n&&n.id)jump(n.id);};
+$('np-sound').onchange=e=>{UI.setPref('sound',e.target.checked);if(e.target.checked)UI.sound('ding');};
+$('np-vib').onchange=e=>{UI.setPref('vibrate',e.target.checked);if(e.target.checked)UI.vibrate([100]);};
+$('np-sys').onchange=async e=>{if(e.target.checked){const r=await UI.sys.enable();if(r==='granted')UI.toast('เปิดแจ้งเหตุบนอุปกรณ์แล้ว','ok');else{UI.toast('ไม่ได้รับอนุญาตแจ้งเตือน','err');}}else UI.setPref('sys',false);syncNP();};
+$('mn-prefs').onclick=()=>{document.querySelector('.ui-pill [data-k=th]')?.click();};
+$('mn-out').onclick=()=>logout();
+if(navigator.serviceWorker)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.focus)jump(e.data.focus);});
+renderNotes();
+/* ============ ลิ้นชักรายการบนมือถือ (peek / half / full) ============ */
+const SHEETS=['peek','half','full'];let sheet='half';
+function setSheet(s){sheet=s;document.body.dataset.sheet=s;setTimeout(()=>map.invalidateSize(),380);}
+setSheet(matchMedia('(max-width:768px)').matches?'half':'half');
+let ty=null;const sh=$('sheet-h');
+sh.addEventListener('click',()=>{if(ty!=null)return;setSheet(SHEETS[(SHEETS.indexOf(sheet)+1)%3]);});
+sh.addEventListener('touchstart',e=>{ty=e.touches[0].clientY;},{passive:true});
+sh.addEventListener('touchend',e=>{if(ty==null)return;const dy=e.changedTouches[0].clientY-ty;if(Math.abs(dy)>30){const i=SHEETS.indexOf(sheet);setSheet(SHEETS[Math.max(0,Math.min(2,i+(dy<0?1:-1)))]);}setTimeout(()=>ty=null,50);});
+function miniStats(){const live=data.filter(i=>!i.mergedInto),c=k=>live.filter(i=>i.status===k).length;$('mini').innerHTML=`<b style="color:#ff6b76">${c('new')}</b> รอ · <b style="color:#fbbf24">${c('progress')}</b> กำลัง · <b style="color:#4ade9a">${c('done')}</b> เสร็จ`;}
+function logout(){sessionStorage.clear();location.href='index.html';}
+
+let first=true;const _rel=UI.hold();let prevAssigned=null,staleDone=new Set(),tf=null;const BASE_T='แผนที่เหตุการณ์ – เดชะปัตตนยานุกูล';
+async function load(force){
+  if(first){$('list').innerHTML=UI.skeleton(4);}
+  try{const j=await api('list',{token},true);const s=JSON.stringify(j.items);
+    if(s===last&&!force){_rel();return;}last=s;data=j.items;
+    const fresh=known?data.filter(i=>!known.has(i.id)&&i.status==='new'&&!i.mergedInto):[];
+    known=new Set(data.map(i=>i.id));first=false;render();if(fp&&data.find(x=>x.id===fp)){const f=fp;fp=null;select(f);setTimeout(()=>focusInc(f),300);}document.querySelectorAll('.live-badge,.live').forEach(x=>x.classList.remove('live-off'));
+    announce(fresh);checkAssigned();_rel();
+  }catch(e){if(/unauthorized/.test(e.message)){UI.toast('หมดเวลาการใช้งาน กรุณาเข้าสู่ระบบใหม่','err');setTimeout(logout,1200);}
+    else{_rel();if(first){$('list').innerHTML='<div style="padding:1.5rem;text-align:center;opacity:.8">⚠ โหลดข้อมูลไม่สำเร็จ<br><small>'+UI.esc(e.message)+'</small></div>';first=false;}document.querySelectorAll('.live-badge,.live').forEach(x=>x.classList.add('live-off'));}}
+}
+function focusInc(id){const m=markers[id];if(!m)return;map.flyTo(m.getLatLng(),19,{duration:.8});setTimeout(()=>m.openPopup(),850);}
+
+document.addEventListener('click',async e=>{
+  const ch=e.target.closest('[data-chip]');if(ch){filter=ch.dataset.chip;render();return;}
+  const b=e.target.closest('[data-act]');
+  if(b){const a=b.dataset.act,id=b.dataset.id;
+    if(a==='hist'){return showHist(id);}
+    if(a==='assign'){select(id);map.closePopup();return UI.toast('เลือกเหตุแล้ว — คลิกชื่อเจ้าหน้าที่ที่ว่างด้านขวาเพื่อมอบหมาย','info');}
+    if(a==='merge'){return openMerge(id);}
+    if(a==='sev'){const it=data.find(x=>x.id===id);try{await api('setSeverity',{token,id,severity:NEXTSEV[(it&&it.severity)||'mid']});await load(true);}catch(x){UI.toast(x.message,'err');}return;}
+    if(a==='unassign'){try{await api('assign',{token,id,username:b.dataset.u,remove:true});UI.toast('ยกเลิกการมอบหมายแล้ว','ok');await load(true);}catch(x){UI.toast(x.message,'err');}return;}
+    if(a==='ph'){if(b.src){$('lbi').src=b.src;$('lb').style.display='flex';}return;}
+    try{if(a==='del'){if(!await UI.confirm('ลบเหตุการณ์นี้ถาวร?',{icon:'🗑️',yes:'ลบเลย'}))return;UI.busy(b,true);await api('remove',{token,id});UI.toast('ลบเหตุการณ์แล้ว','ok');}
+      else{let note='';if(a==='done'){note=await UI.prompt('บันทึกผลการดำเนินการ (ไม่บังคับ)',{chips:['ส่งห้องพยาบาลแล้ว','ส่งโรงพยาบาลแล้ว','แจ้งผู้ปกครองแล้ว','ว่ากล่าวตักเตือน','ไกล่เกลี่ยเรียบร้อย','ไม่พบเหตุ/แจ้งผิด'],ph:'เช่น ส่งตัวไปห้องพยาบาล / ว่ากล่าวตักเตือน / แจ้งผู้ปกครองแล้ว'});if(note===null)return;}UI.busy(b,true);await api('update',{token,id,status:a,note});UI.toast(a==='done'?'ปิดเหตุเรียบร้อย':'รับเรื่องแล้ว','ok');}
+      map.closePopup();await load(true);}catch(x){UI.busy(b,false);UI.toast(x.message,'err');}
+    return;}
+  if(e.target.closest('#selx')){selId=null;document.querySelectorAll('.inc-card.sel').forEach(x=>x.classList.remove('sel'));renderRoster();return;}
+  if(e.target.closest('#ro-h')){roOpen=!roOpen;renderRoster();return;}
+  const o=e.target.closest('.off');
+  if(o){if(o.disabled)return;if(!selId)return UI.toast('เลือกเหตุก่อน — คลิกที่การ์ดเหตุหรือหมุดบนแผนที่','info');
+    o.disabled=true;try{await api('assign',{token,id:selId,username:o.dataset.u});UI.toast('มอบหมาย '+o.querySelector('b').textContent+' แล้ว','ok');}catch(x){UI.toast(x.message,'err');}
+    await load(true);return;}
+  const c=e.target.closest('.inc-card');if(c){select(c.dataset.id);focusInc(c.dataset.id);if(matchMedia('(max-width:768px)').matches&&sheet==='full')setSheet('half');}
+});
+$('q').oninput=render;
+$('logout').onclick=logout;
+$('ptoggle').onclick=()=>{document.body.classList.toggle('no-panel');setTimeout(()=>map.invalidateSize(),350);};
+$('btn-add').onclick=()=>{addMode=!addMode;$('btn-add').textContent=addMode?'ออกโหมดเพิ่มจุด':'+ เพิ่มจุด';
+  $('map').style.cursor=addMode?'crosshair':'';if(addMode)toast('📍 คลิกบนแผนที่เพื่อปักหมุดจุดเกิดเหตุ',3000);};
+function openAdd(ll,t){pend=ll;$('a-pl').textContent=t||('📍 '+ll.lat.toFixed(5)+', '+ll.lng.toFixed(5));$('add-modal').style.display='flex';}
+map.on('click',e=>{if(!addMode)return;openAdd(e.latlng);});
+let meM=null;
+function myPos(cb){if(!navigator.geolocation)return UI.toast('อุปกรณ์นี้ไม่รองรับการระบุตำแหน่ง','err');
+  navigator.geolocation.getCurrentPosition(p=>{const ll=L.latLng(p.coords.latitude,p.coords.longitude);
+    if(meM)meM.setLatLng(ll);else meM=L.marker(ll,{icon:L.divIcon({className:'',html:'<div class="me-dot"></div>',iconSize:[18,18],iconAnchor:[9,9]}),interactive:false}).addTo(map);
+    map.flyTo(ll,19,{duration:.9});cb&&cb(ll,Math.round(p.coords.accuracy));},
+    e=>UI.toast(e.code===1?'ไม่ได้รับอนุญาตใช้ตำแหน่ง':'หาตำแหน่งไม่พบ','err'),{enableHighAccuracy:true,timeout:12000});}
+$('fab').onclick=()=>myPos();
+$('a-gps').onclick=()=>{UI.busy($('a-gps'),true,'กำลังค้นหาตำแหน่ง…');myPos((ll,m)=>{UI.busy($('a-gps'),false);openAdd(ll,'📍 ใช้ตำแหน่งปัจจุบัน ±'+m+' ม.');UI.toast('ปักหมุดตำแหน่งปัจจุบันแล้ว','ok');});setTimeout(()=>UI.busy($('a-gps'),false),13000);};
+$('a-cancel').onclick=()=>{$('add-modal').style.display='none';pend=null;};
+$('a-ok').onclick=async()=>{
+  if(!$('a-type').value||!pend)return UI.toast('กรุณาเลือกประเภทเหตุ','err');
+  UI.busy($('a-ok'),true,'กำลังบันทึก…');try{await api('add',{token,type:$('a-type').value,channel:$('a-ch').value,severity:$('a-sev').value,reporter:$('a-nm').value,phone:$('a-ph').value,cls:$('a-cls').value,sid:$('a-sid').value,location:$('a-loc').value,students:$('a-who').value,detail:$('a-detail').value,urgent:$('a-urg').checked,lat:pend.lat,lng:pend.lng});
+    $('add-modal').style.display='none';pend=null;['a-type','a-loc','a-who','a-detail','a-nm','a-ph','a-cls','a-sid'].forEach(i=>$(i).value='');$('a-urg').checked=false;toast('✅ เพิ่มจุดเรียบร้อย',2500);UI.busy($('a-ok'),false);await load(true);
+  }catch(x){UI.busy($('a-ok'),false);UI.toast(x.message,'err');}};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){clearInterval(tf);tf=null;document.title=BASE_T;}});
+function tick(){const n=new Date();$('clock').textContent=n.toLocaleTimeString('th-TH');$('date').textContent=n.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});}
+tick();setInterval(tick,1000);
+load();(function loop(){setTimeout(()=>{load().finally(loop);},document.hidden?20000:8000);})();   // แจ้งเตือนต่อเนื่องแม้แท็บอยู่เบื้องหลัง
+window.addEventListener('resize',()=>map.invalidateSize());
+$('heatb').onclick=()=>setHeat(!heatOn);
+$('mg-cancel').onclick=()=>$('mg-modal').style.display='none';
+$('mg-ok').onclick=async()=>{if(!$('mg-sel').value)return;UI.busy($('mg-ok'),true,'กำลังรวม…');
+  try{await api('merge',{token,id:mgId,into:$('mg-sel').value});$('mg-modal').style.display='none';UI.toast('รวมเหตุซ้ำแล้ว','ok');map.closePopup();await load(true);}catch(x){UI.toast(x.message,'err');}UI.busy($('mg-ok'),false);};
+loadStaff();setInterval(()=>{refreshStale();staleCheck();},60000);
+let asked=false;setInterval(async()=>{const t=+sessionStorage.getItem('loginAt')||0;if(!t||asked)return;
+  if(Date.now()-t>5.5*3600e3){asked=true;
+    if(await UI.confirm('เซสชันของคุณจะหมดอายุในอีกไม่ถึง 30 นาที ต่ออายุอีก 6 ชั่วโมงไหม?',{icon:'⏳',yes:'ต่ออายุ',no:'ไว้ก่อน',safe:true,lock:true})){
+      try{await api('renew',{token});sessionStorage.setItem('loginAt',Date.now());asked=false;UI.toast('ต่ออายุเรียบร้อย','ok');}catch(e){UI.toast(e.message,'err');}}}},30000);
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script></body></html>

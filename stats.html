@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="th"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="theme-color" content="#14306b"/>
+<title>สถิติและรายงาน – เดชะปัตตนยานุกูล</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/report.css"/><link rel="stylesheet" href="css/ui.css"/>
+<style>.wrap{max-width:900px}.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.8rem;margin-bottom:1rem}
+.tile{background:#fff;border-radius:18px;padding:1rem 1.1rem;box-shadow:var(--sh)}.tile small{color:var(--mut);font-weight:700;font-size:.78rem}.tile b{display:block;font-size:1.9rem;font-weight:800;color:var(--navy);line-height:1.2}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}@media(max-width:700px){.grid2{grid-template-columns:1fr}}
+.bar{display:flex;align-items:center;gap:.6rem;margin:.45rem 0;font-size:.85rem;position:static;padding:0;background:none}.bar span{width:38%;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr{flex:1;background:#eef1fa;border-radius:7px;overflow:hidden}.bar i{display:block;height:14px;border-radius:7px;background:linear-gradient(90deg,#2a5ad7,#6b8cf0);width:0;transition:width .9s cubic-bezier(.22,1,.36,1)}.bar em{font-style:normal;font-weight:800;color:var(--navy);min-width:1.5em}
+.cols{display:flex;align-items:flex-end;gap:4px;height:130px;margin-top:.5rem}.cols div{flex:1;background:linear-gradient(180deg,#6b8cf0,#2a5ad7);border-radius:6px 6px 0 0;min-height:2px;position:relative;transition:height .9s cubic-bezier(.22,1,.36,1);height:0}
+.cols div:hover::after{content:attr(data-t);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#16203a;color:#fff;font-size:.7rem;padding:.15rem .4rem;border-radius:6px;white-space:nowrap;margin-bottom:3px}
+.ax{display:flex;gap:4px;font-size:.62rem;color:var(--mut)}.ax span{flex:1;text-align:center}
+.tools{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1rem}.tools .seg{flex:1;min-width:240px}.exp{border:0;background:var(--ok);color:#fff;font:800 .9rem Sarabun;padding:.7rem 1.1rem;border-radius:14px;cursor:pointer;box-shadow:0 8px 18px rgba(22,163,74,.3)}.ph{display:none}@media print{body{background:#fff!important}.hero,.noprint,.ui-pill,p[style*=center]{display:none!important}.ph{display:block;margin-bottom:1rem;font-size:.9rem}.ph b{display:block;font-size:1.3rem}.ph span{display:block;color:#444}.wrap{margin:0;max-width:none}.sec,.tile{box-shadow:none;border:1px solid #ddd;break-inside:avoid}.cols div,.bar i{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
+<header class="hero" style="padding-bottom:4.2rem"><div class="hero-in"><div class="logo">📊</div><div><h1>สถิติและรายงาน</h1><p>ภาพรวมเหตุการณ์ในโรงเรียน • ส่งออกไฟล์ Excel (CSV)</p></div></div></header>
+<main class="wrap" style="margin-bottom:3rem">
+<div class="ph" id="ph"><b>รายงานสรุปเหตุการณ์ โรงเรียนเดชะปัตตนยานุกูล</b><span id="ph-r"></span><span id="ph-d"></span></div>
+<div class="tools noprint"><div class="seg" id="rng"><button data-d="7">7 วัน</button><button data-d="30" class="on">30 วัน</button><button data-d="90">90 วัน</button><button data-d="m0">เดือนนี้</button><button data-d="m1">เดือนก่อน</button><button data-d="0">ทั้งหมด</button></div><button class="exp" id="exp">⬇ ส่งออก CSV</button><button class="exp" id="prt" style="background:#14306b;box-shadow:none">🖨 พิมพ์ / PDF</button></div>
+<div class="tiles" id="tiles"></div>
+<div class="grid2">
+<section class="sec"><div class="sec-h"><div class="sec-n">1</div><div><h2>ตามประเภทเหตุ</h2></div></div><div id="b-type"></div></section>
+<section class="sec"><div class="sec-h"><div class="sec-n">ช</div><div><h2>ช่องทางที่รับแจ้ง</h2></div></div><div id="b-ch"></div></section>
+<section class="sec"><div class="sec-h"><div class="sec-n">2</div><div><h2>สถานที่ที่เกิดบ่อย</h2></div></div><div id="b-loc"></div></section>
+</div>
+<section class="sec"><div class="sec-h"><div class="sec-n">3</div><div><h2>จำนวนเหตุรายวัน</h2></div></div><div class="cols" id="c-day"></div><div class="ax" id="x-day"></div></section>
+<section class="sec"><div class="sec-h"><div class="sec-n">4</div><div><h2>ช่วงเวลาที่เกิดเหตุ (ชั่วโมง)</h2></div></div><div class="cols" id="c-hr"></div><div class="ax" id="x-hr"></div></section>
+<p style="text-align:center"><a href="dashboard.html" style="color:var(--navy);font-weight:700">← กลับหน้าแผนที่</a></p></main>
+<script src="js/ui.js"></script><script src="js/fx.js"></script><script src="js/config.js"></script>
+<script>
+const $=id=>document.getElementById(id),token=sessionStorage.getItem('tok');if(!token)location.href='index.html';
+let all=[],days=30;
+const esc=UI.esc,DAY=864e5;
+function range(){const n=new Date(),m0=new Date(n.getFullYear(),n.getMonth(),1).getTime();
+  if(days==='m0')return[m0,Date.now()+DAY];if(days==='m1')return[new Date(n.getFullYear(),n.getMonth()-1,1).getTime(),m0];
+  return[days?Date.now()-days*DAY:0,Date.now()+DAY];}
+function sel(){const[a,b]=range();return all.filter(i=>i.time>=a&&i.time<b&&!i.mergedInto);}
+function bars(el,pairs,max=6){const m=Math.max(1,...pairs.map(p=>p[1]));
+  el.innerHTML=pairs.slice(0,max).map(p=>`<div class="bar"><span title="${esc(p[0])}">${esc(p[0])}</span><div class="tr"><i data-w="${p[1]/m*100}"></i></div><em>${p[1]}</em></div>`).join('')||'<div style="color:var(--mut)">ไม่มีข้อมูล</div>';
+  requestAnimationFrame(()=>el.querySelectorAll('i').forEach(i=>i.style.width=i.dataset.w+'%'));}
+function cols(el,ax,vals,labels){const m=Math.max(1,...vals);
+  el.innerHTML=vals.map((v,i)=>`<div data-t="${labels[i]}: ${v}" data-h="${v/m*100}"></div>`).join('');
+  ax.innerHTML=labels.map((l,i)=>`<span>${vals.length>16&&i%2?'':l}</span>`).join('');
+  requestAnimationFrame(()=>el.querySelectorAll('div').forEach(d=>d.style.height=d.dataset.h+'%'));}
+const cnt=(arr,f)=>{const m={};arr.forEach(i=>{const k=f(i);if(k)m[k]=(m[k]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);};
+function draw(){const d=sel(),done=d.filter(i=>i.status==='done'&&i.handledAt),
+  avg=done.length?Math.round(done.reduce((s,i)=>s+(i.handledAt-i.time),0)/done.length/60000):0;
+  const T=[['เหตุทั้งหมด',d.length],['เสร็จสิ้นแล้ว',d.filter(i=>i.status==='done').length],['ยังไม่ปิด',d.filter(i=>i.status!=='done').length],['ฉุกเฉิน',d.filter(i=>i.urgent).length],['เวลาเฉลี่ยปิดเรื่อง',avg>=60?(avg/60).toFixed(1)+' ชม.':avg+' นาที']];
+  $('tiles').innerHTML=T.map(t=>`<div class="tile"><small>${t[0]}</small><b>${t[1]}</b></div>`).join('');
+  bars($('b-type'),cnt(d,i=>i.type));bars($('b-ch'),cnt(d,i=>i.channel||'หน้าเว็บ'));
+  const[ra,rb]=range(),f=t=>new Date(t).toLocaleDateString('th-TH',{dateStyle:'long'});$('ph-r').textContent='ช่วงเวลา: '+(days===0?'ทั้งหมด':f(ra)+' – '+f(Math.min(rb-1,Date.now())));$('ph-d').textContent='พิมพ์เมื่อ '+f(Date.now());
+  bars($('b-loc'),cnt(d,i=>(i.location||'').trim().slice(0,30)));
+  const n=Math.min(typeof days==='number'&&days?days:14,14),vals=[],lb=[],t0=new Date();t0.setHours(0,0,0,0);
+  for(let k=n-1;k>=0;k--){const s=t0.getTime()-k*DAY;vals.push(all.filter(i=>i.time>=s&&i.time<s+DAY).length);lb.push(new Date(s).toLocaleDateString('th-TH',{day:'numeric',month:'short'}));}
+  cols($('c-day'),$('x-day'),vals,lb);
+  const hv=Array(24).fill(0);d.forEach(i=>hv[new Date(i.time).getHours()]++);cols($('c-hr'),$('x-hr'),hv,hv.map((_,h)=>h));}
+$('rng').onclick=e=>{const b=e.target.closest('button');if(!b)return;[...$('rng').children].forEach(x=>x.classList.toggle('on',x===b));days=/^m/.test(b.dataset.d)?b.dataset.d:+b.dataset.d;draw();};
+$('prt').onclick=()=>window.print();
+$('exp').onclick=()=>{const d=sel(),q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"',S={new:'รอดำเนินการ',progress:'กำลังดำเนินการ',done:'เสร็จสิ้น'},
+  H=['รหัส','เวลา','ประเภท','ฉุกเฉิน','สถานที่','ผู้แจ้ง','สถานะผู้แจ้ง','เบอร์โทร','ชั้น','รหัสนักเรียน','นักเรียนที่เกี่ยวข้อง','รายละเอียด','สถานะ','ช่องทางรับแจ้ง','ผู้ดำเนินการ','เวลาปิด','ผู้รับผิดชอบ','บันทึกผล','IP','อุปกรณ์','พิกัด'],
+  R=d.map(i=>[i.code,new Date(i.time).toLocaleString('th-TH'),i.type,i.urgent?'ใช่':'',i.location,i.reporter,i.role,i.phone,i.cls,i.sid,i.students,i.detail,S[i.status],i.channel,i.handledBy,i.handledAt?new Date(i.handledAt).toLocaleString('th-TH'):'',i.assignee,i.note,i.ip,i.ua,i.gps].map(q).join(','));
+  const blob=new Blob(['﻿'+[H.map(q).join(','),...R].join('\r\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='incidents_'+new Date().toISOString().slice(0,10)+'.csv';a.click();UI.toast('ส่งออก '+d.length+' รายการแล้ว','ok');};
+(async()=>{try{UI.loading(true,'กำลังโหลดข้อมูล…');all=(await api('list',{token,limit:3000},true)).items;draw();}
+  catch(e){UI.toast(e.message,'err');if(/unauthorized/.test(e.message))location.href='index.html';}UI.loading(false);})();
+</script></body></html>

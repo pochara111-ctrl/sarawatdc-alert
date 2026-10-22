@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="theme-color" content="#14306b"/>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/report.css"/><link rel="stylesheet" href="css/ui.css"/><title>จัดการบัญชี – เดชะปัตตนยานุกูล</title>
+<style>.u{display:flex;align-items:center;gap:.7rem;padding:.7rem 0;border-bottom:1px solid var(--line)}.u:last-child{border:0}.u b{flex:1}.u small{color:var(--mut);display:block;font-weight:500}
+.u button{border:0;background:#fee2e2;color:#b91c1c;font:700 .8rem Sarabun;padding:.45rem .8rem;border-radius:10px;cursor:pointer}.tag{font-size:.7rem;background:#e0e7ff;color:#3730a3;border-radius:50px;padding:.1rem .55rem;font-weight:700}</style></head><body>
+<header class="hero" style="padding-bottom:4.2rem"><div class="hero-in"><div class="logo">⚙️</div><div><h1>จัดการบัญชี</h1><p>เพิ่ม/ลบเจ้าหน้าที่ และเปลี่ยนรหัสผ่านของคุณ</p></div></div></header>
+<main class="wrap" style="margin-bottom:3rem">
+<section class="sec ui-stagger-card" id="adm-add"><div class="sec-h"><div class="sec-n">+</div><div><h2>เพิ่มเจ้าหน้าที่</h2><small>รหัสผ่านอย่างน้อย 8 ตัว</small></div></div>
+  <div class="row2"><div class="fg"><label class="lb">ชื่อผู้ใช้ (a-z 0-9)</label><input id="n-u" class="inp" autocomplete="off"/></div><div class="fg"><label class="lb">ชื่อที่แสดง</label><input id="n-n" class="inp"/></div></div>
+  <div class="row2"><div class="fg"><label class="lb">รหัสผ่าน</label><input id="n-p" class="inp" type="password" autocomplete="new-password"/></div>
+  <div class="fg"><label class="lb">หน่วย/ฝ่าย</label><input id="n-unit" class="inp" list="units" placeholder="เช่น ฝ่ายปกครอง"/><datalist id="units"><option value="ฝ่ายปกครอง"><option value="ฝ่ายกิจการนักเรียน"><option value="ห้องพยาบาล"><option value="รปภ."><option value="ครูเวร"><option value="ศูนย์แจ้งเหตุ"></datalist></div>
+  <div class="fg"><label class="lb">ตำแหน่ง</label><input id="n-pos" class="inp" list="pos" placeholder="เช่น สารวัตรนักเรียน"/><datalist id="pos"><option value="สารวัตรนักเรียน"><option value="ครูเวร"><option value="ครูฝ่ายปกครอง"><option value="พยาบาล"><option value="ครูที่ปรึกษา"></datalist></div>
+  <div class="fg"><label class="lb">สิทธิ์</label><select id="n-r" class="sel"><option value="staff">เจ้าหน้าที่</option><option value="admin">ผู้ดูแลระบบ (ลบเหตุได้)</option></select></div></div>
+  <button class="btn-next" id="add">เพิ่มบัญชี</button></section>
+<section class="sec" id="adm-list"><div class="sec-h"><div class="sec-n">👥</div><div><h2>บัญชีทั้งหมด</h2></div></div><div id="ls"></div></section>
+<section class="sec"><div class="sec-h"><div class="sec-n">🔑</div><div><h2>เปลี่ยนรหัสผ่านของฉัน</h2></div></div>
+  <div class="row2"><div class="fg"><label class="lb">รหัสผ่านเดิม</label><input id="o-p" class="inp" type="password" autocomplete="current-password"/></div><div class="fg"><label class="lb">รหัสผ่านใหม่</label><input id="w-p" class="inp" type="password" autocomplete="new-password"/></div></div>
+  <button class="btn-next" id="chg">เปลี่ยนรหัสผ่าน</button></section>
+<p style="text-align:center"><a href="dashboard.html" style="color:var(--navy);font-weight:700">← กลับหน้าแผนที่</a></p></main>
+<script src="js/ui.js"></script><script src="js/fx.js"></script><script src="js/config.js"></script>
+<script>
+const $=id=>document.getElementById(id),token=sessionStorage.getItem('tok'),isAdmin=sessionStorage.getItem('role')==='admin';
+if(!token)location.href='index.html';
+if(!isAdmin){$('adm-add').style.display=$('adm-list').style.display='none';}
+async function load(){if(!isAdmin)return;try{const j=await api('staffList',{token},true);
+  $('ls').innerHTML=j.items.map(u=>`<div class="u" style="flex-wrap:wrap"><b>${UI.esc(u.name)}<small>${UI.esc(u.username)} • ${u.role==='admin'?'ผู้ดูแล':'เจ้าหน้าที่'}</small></b>
+    <input class="inp" data-f="unit" data-u="${UI.esc(u.username)}" value="${UI.esc(u.unit||'')}" placeholder="หน่วย/ฝ่าย" list="units" style="width:140px;padding:.4rem .6rem;font-size:.85rem"/>
+    <input class="inp" data-f="pos" data-u="${UI.esc(u.username)}" value="${UI.esc(u.position||'')}" placeholder="ตำแหน่ง" list="pos" style="width:140px;padding:.4rem .6rem;font-size:.85rem"/>
+    <button data-save="${UI.esc(u.username)}" style="background:#dcfce7;color:#15803d">บันทึก</button><button data-u="${UI.esc(u.username)}">ลบ</button></div>`).join('');
+}catch(e){UI.toast(e.message,'err');if(/unauthorized/.test(e.message))location.href='index.html';}}
+$('ls').onclick=async e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.save){const u=b.dataset.save,g=f=>document.querySelector(`#ls input[data-f=${f}][data-u="${u}"]`).value;
+    try{await api('staffSet',{token,username:u,position:g('pos'),unit:g('unit')});UI.toast('บันทึกแล้ว','ok');}catch(x){UI.toast(x.message,'err');}return;}
+  if(!await UI.confirm('ลบบัญชี '+b.dataset.u+' ?',{icon:'🗑️',yes:'ลบ'}))return;
+  try{await api('staffDel',{token,username:b.dataset.u});UI.toast('ลบแล้ว','ok');load();}catch(x){UI.toast(x.message,'err');}};
+$('add').onclick=async()=>{UI.busy($('add'),true,'กำลังบันทึก…');
+  try{await api('staffAdd',{token,username:$('n-u').value,name:$('n-n').value,password:$('n-p').value,position:$('n-pos').value,unit:$('n-unit').value,role:$('n-r').value});
+    UI.toast('เพิ่มบัญชีแล้ว','ok');['n-u','n-n','n-p','n-pos','n-unit'].forEach(i=>$(i).value='');load();}catch(x){UI.toast(x.message,'err');UI.shake($('adm-add'));}UI.busy($('add'),false);};
+$('chg').onclick=async()=>{UI.busy($('chg'),true,'กำลังบันทึก…');
+  try{await api('passwd',{token,oldPassword:$('o-p').value,newPassword:$('w-p').value});UI.toast('เปลี่ยนรหัสผ่านแล้ว','ok');$('o-p').value=$('w-p').value='';}catch(x){UI.toast(x.message,'err');}UI.busy($('chg'),false);};
+load();
+</script></body></html>

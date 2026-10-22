@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="th"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ระบบแจ้งเหตุ – โรงเรียนเดชะปัตตนยานุกูล</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/login.css"/>
+<link rel="stylesheet" href="css/ui.css"/>
+<link rel="manifest" href="manifest.webmanifest"/><meta name="theme-color" content="#14306b"/>
+</head><body>
+<div class="page-bg"><div class="bg-circle c1"></div><div class="bg-circle c2"></div>
+<div class="login-wrapper">
+  <div class="brand-header">
+    <img src="school-logo.png" alt="" class="brand-logo-img" onerror="this.style.display='none'"/>
+    <div class="brand-text"><h1 class="brand-title" style="font-size:1.5rem">ระบบแจ้งเหตุในโรงเรียน</h1>
+    <p class="brand-subtitle">โรงเรียนเดชะปัตตนยานุกูล</p></div>
+  </div>
+  <div class="login-card ui-stagger-card" id="card">
+    <div class="card-header"><div class="header-texts">
+      <h2 class="card-title">เจ้าหน้าที่เข้าสู่ระบบ</h2><p class="card-subtitle">ฝ่ายปกครอง / พยาบาล / ผู้ดูแลระบบ</p></div></div>
+    <form class="login-form" id="f">
+      <div class="form-group"><label class="form-label" for="u">ชื่อผู้ใช้งาน</label>
+        <input class="form-control" style="padding-left:1rem" id="u" required autocomplete="username"/></div>
+      <div class="form-group"><label class="form-label" for="p">รหัสผ่าน</label>
+        <input class="form-control" style="padding-left:1rem" type="password" id="p" required autocomplete="current-password"/></div>
+      <div id="err" class="login-error" style="display:none"></div>
+      <button type="submit" class="btn-login" id="b"><span>เข้าสู่ระบบ</span></button>
+    </form>
+    <div style="padding:0 2rem 1.5rem"><div style="font-size:.85rem;color:#666;margin-bottom:.7rem;text-align:center;font-weight:500">สำหรับผู้แจ้งเหตุ (ไม่ต้องล็อกอิน)</div><button class="btn-qr report" type="button" onclick="showQR()">🚨 QR แจ้งเหตุ (สแกนด้วยมือถือ)</button><a href="report.html"><button class="btn-qr" type="button">เปิดหน้าแจ้งเหตุ</button></a><a href="track.html"><button class="btn-qr" type="button">🔎 ติดตามสถานะเรื่องที่แจ้ง</button></a></div>
+    <div class="card-footer"><p>สำหรับเจ้าหน้าที่ที่ได้รับอนุญาตเท่านั้น</p></div>
+  </div>
+</div></div>
+<div id="qr-modal" class="modal-overlay" style="display:none" onclick="this.style.display='none'">
+  <div class="modal-content" onclick="event.stopPropagation()"><button class="modal-close" onclick="document.getElementById('qr-modal').style.display='none'">✕</button>
+  <h3 style="margin:.5rem 0 .25rem">QR แจ้งเหตุในโรงเรียน</h3><p style="font-size:.8rem;color:#666;margin-bottom:1rem">สแกนเพื่อเปิดหน้าแจ้งเหตุบนมือถือ</p>
+  <div id="qr-box" style="display:flex;justify-content:center;padding:1rem;background:#fff;border-radius:8px"></div></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="js/ui.js"></script><script src="js/fx.js"></script>
+<script src="js/config.js"></script>
+<script>
+if(sessionStorage.getItem('tok')) location.href='dashboard.html';
+function showQR(){const url=location.href.split('#')[0].replace(/[^\/]*$/,'')+'report.html';
+  const box=document.getElementById('qr-box');box.innerHTML='';
+  new QRCode(box,{text:url,width:200,height:200,colorDark:'#e63946',colorLight:'#fff'});
+  document.getElementById('qr-modal').style.display='flex';}
+f.onsubmit=async e=>{e.preventDefault();err.style.display='none';UI.busy(b,true,'กำลังตรวจสอบ…');
+  try{const j=await api('login',{username:u.value,password:p.value});
+    sessionStorage.setItem('tok',j.token);sessionStorage.setItem('role',j.role);sessionStorage.setItem('name',j.name);sessionStorage.setItem('user',j.username||'');sessionStorage.setItem('loginAt',Date.now());
+    UI.busy(b,false);UI.loading(true,'ยินดีต้อนรับ '+j.name);setTimeout(()=>location.href='dashboard.html',650);
+  }catch(x){err.textContent='⚠ '+x.message;err.style.display='block';p.value='';p.focus();
+    UI.busy(b,false);UI.shake(document.getElementById('card'));UI.toast(x.message,'err');}};
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script></body></html>

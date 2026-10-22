@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="theme-color" content="#14306b"/>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/report.css"/><link rel="stylesheet" href="css/ui.css"/><title>ติดตามสถานะ – เดชะปัตตนยานุกูล</title>
+<style>.tl{list-style:none;margin:1.2rem 0 .5rem;position:relative}.tl li{display:flex;gap:.9rem;padding-bottom:1.4rem;position:relative;opacity:.4;transition:.5s}
+.tl li::before{content:"";position:absolute;left:17px;top:36px;bottom:0;width:3px;background:var(--line)}.tl li:last-child::before{display:none}
+.tl .dt{width:36px;height:36px;border-radius:50%;background:#e3e8f4;display:grid;place-items:center;font-size:1.1rem;flex:none;z-index:1}
+.tl li.on{opacity:1}.tl li.on .dt{background:var(--ok);color:#fff;animation:ui-pop .5s both}.tl li.cur .dt{background:var(--blue);animation:ui-pop .5s both,ui-ring2 1.6s infinite}
+.tl b{display:block}.tl small{color:var(--mut)}@keyframes ui-ring2{0%{box-shadow:0 0 0 0 rgba(42,90,215,.5)}100%{box-shadow:0 0 0 16px rgba(42,90,215,0)}}
+#res{display:none}</style></head><body>
+<header class="hero" style="padding-bottom:4.2rem"><div class="hero-in"><div class="logo">🔎</div><div><h1>ติดตามสถานะเรื่องที่แจ้ง</h1><p>กรอกรหัส 6 หลักที่ได้ตอนแจ้งเหตุ</p></div></div></header>
+<main class="wrap" style="margin-bottom:3rem">
+<section class="sec ui-stagger-card"><div class="fg"><label class="lb" for="c">รหัสติดตามเรื่อง</label>
+  <input id="c" class="inp" maxlength="6" autocomplete="off" style="text-transform:uppercase;letter-spacing:6px;font-size:1.4rem;text-align:center;font-weight:800"/></div>
+  <button class="btn-next" id="go">ตรวจสอบสถานะ</button></section>
+<section class="sec" id="res"><div class="sec-h"><div class="sec-n">📋</div><div><h2 id="r-t"></h2><small id="r-s"></small></div></div>
+  <ul class="tl" id="tl"></ul></section>
+<p style="text-align:center"><a href="report.html" style="color:var(--navy);font-weight:700">+ แจ้งเหตุใหม่</a></p>
+</main>
+<script src="js/ui.js"></script><script src="js/fx.js"></script><script src="js/config.js"></script>
+<script>const EN_D={"ติดตามสถานะเรื่องที่แจ้ง": "Track your report", "กรอกรหัส 6 หลักที่ได้ตอนแจ้งเหตุ": "Enter the 6-character code you received", "รหัสติดตามเรื่อง": "Tracking code", "ตรวจสอบสถานะ": "Check status", "+ แจ้งเหตุใหม่": "+ New report", "ได้รับเรื่องแล้ว": "Received", "เจ้าหน้าที่ได้รับแจ้ง": "Staff have been notified", "เจ้าหน้าที่กำลังดำเนินการ": "Staff are handling it", "รอเจ้าหน้าที่รับเรื่อง": "Waiting for staff", "ดำเนินการเสร็จสิ้น": "Completed"};UI.i18n(EN_D);</script>
+<script>
+const $=id=>document.getElementById(id),fmt=t=>new Date(+t).toLocaleString('th-TH',{dateStyle:'medium',timeStyle:'short'});
+async function go(){const c=$('c').value.trim();if(c.length!==6)return UI.toast('กรอกรหัส 6 หลัก','err');
+  UI.busy($('go'),true,'กำลังตรวจสอบ…');
+  try{const j=await api('track',{code:c});const k={new:0,progress:1,done:2}[j.status]??0;
+    $('r-t').textContent=j.type;$('r-s').textContent='แจ้งเมื่อ '+fmt(j.time);
+    const st=[['📨','ได้รับเรื่องแล้ว','เจ้าหน้าที่ได้รับแจ้ง'],['🚑','เจ้าหน้าที่กำลังดำเนินการ',j.status!=='new'&&j.handledAt?fmt(j.handledAt):'รอเจ้าหน้าที่รับเรื่อง'],['✅','ดำเนินการเสร็จสิ้น',j.status==='done'&&j.handledAt?fmt(j.handledAt):'']];
+    $('tl').innerHTML=st.map((s,i)=>`<li class="${i<=k?'on':''} ${i===k&&k<2?'cur':''}"><span class="dt">${s[0]}</span><div><b>${UI.t(s[1])}</b><small>${UI.t(s[2])}</small></div></li>`).join('');
+    $('res').style.display='block';$('res').scrollIntoView({behavior:'smooth'});
+  }catch(e){UI.toast(e.message,'err');UI.shake($('go').closest('.sec'));}UI.busy($('go'),false);}
+$('go').onclick=go;$('c').onkeydown=e=>{if(e.key==='Enter')go();};
+const q=new URLSearchParams(location.search).get('c');if(q){$('c').value=q;go();}
+</script></body></html>

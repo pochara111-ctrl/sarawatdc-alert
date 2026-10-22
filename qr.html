@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="th"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="theme-color" content="#14306b"/>
+<title>ป้าย QR แยกตามจุด – เดชะปัตตนยานุกูล</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="css/report.css"/><link rel="stylesheet" href="css/ui.css"/>
+<style>.wrap{max-width:900px}#map{height:300px;border-radius:16px}.row{display:flex;gap:.6rem;margin-top:.7rem;flex-wrap:wrap}.row .inp{flex:1;min-width:180px}
+.b{border:0;border-radius:14px;padding:.8rem 1.1rem;font:800 .92rem Sarabun;cursor:pointer;color:#fff;background:var(--blue)}.b.g{background:var(--ok)}.b.o{background:#64748b}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1rem}
+.pt{background:#fff;color:#16203a;border-radius:18px;padding:1rem;text-align:center;box-shadow:var(--sh);border:3px solid #e63946;page-break-inside:avoid}
+.pt h3{font-size:1.15rem;margin-top:.6rem}.pt .s{font-size:.72rem;color:#667}.pt .qr{display:flex;justify-content:center;margin:.4rem 0}.pt .sc{font-weight:800;color:#e63946}.pt button{margin-top:.5rem;border:0;background:#fee2e2;color:#b91c1c;border-radius:10px;padding:.3rem .8rem;font:700 .75rem Sarabun;cursor:pointer}
+.pt .school{font-size:.72rem;font-weight:700;color:#14306b}
+@media print{body{background:#fff!important}.hero,.noprint,.ui-pill{display:none!important}.wrap{margin:0!important;max-width:none}.pt button{display:none}.cards{grid-template-columns:repeat(3,1fr)}}</style></head><body>
+<header class="hero" style="padding-bottom:4.2rem"><div class="hero-in"><div class="logo">▦</div><div><h1>ป้าย QR แยกตามจุด</h1><p>สแกนแล้วตำแหน่งและชื่อสถานที่ถูกกรอกให้อัตโนมัติ</p></div></div></header>
+<main class="wrap" style="margin-bottom:3rem">
+<section class="sec noprint ui-stagger-card"><div class="sec-h"><div class="sec-n">+</div><div><h2>เพิ่มจุด</h2><small>คลิกบนแผนที่ (หรือใช้ตำแหน่งปัจจุบัน) แล้วตั้งชื่อจุด เช่น "ห้องน้ำอาคาร 3 ชั้น 2"</small></div></div>
+  <div id="map"></div><div class="row"><input id="nm" class="inp" placeholder="ชื่อจุด เช่น หลังอาคาร 4 / โรงอาหาร / ห้องน้ำชาย อาคาร 3"/><button class="b o" id="me">📍 ตำแหน่งฉัน</button><button class="b" id="add">เพิ่มป้าย</button></div>
+  <div class="status" id="st"><span class="dot"></span><span>ยังไม่ได้เลือกพิกัด</span></div></section>
+<div class="row noprint" style="margin:0 0 1rem"><button class="b g" onclick="window.print()">🖨 พิมพ์ป้ายทั้งหมด</button><span style="align-self:center;color:var(--mut);font-size:.8rem">จุดที่เพิ่มถูกบันทึกในเบราว์เซอร์เครื่องนี้ • ลิงก์ในป้ายใช้ที่อยู่เว็บปัจจุบัน</span></div>
+<div class="cards" id="cards"></div>
+<p class="noprint" style="text-align:center;margin-top:1rem"><a href="dashboard.html" style="color:var(--navy);font-weight:700">← กลับหน้าแผนที่</a></p></main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="js/ui.js"></script><script src="js/fx.js"></script><script src="js/config.js"></script>
+<script>
+const $=id=>document.getElementById(id);if(!sessionStorage.getItem('tok'))location.href='index.html';
+let pts=[];try{pts=JSON.parse(localStorage.getItem('qrpts')||'[]');}catch(e){}
+const save=()=>{try{localStorage.setItem('qrpts',JSON.stringify(pts));}catch(e){}};
+const map=L.map('map').setView([SCHOOL.lat,SCHOOL.lng],SCHOOL.zoom);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,attribution:'Esri'}).addTo(map);
+let cur=null,mk=null;
+function pick(ll){cur={lat:+ll.lat.toFixed(6),lng:+ll.lng.toFixed(6)};if(mk)mk.setLatLng(ll);else mk=L.marker(ll,{draggable:true}).addTo(map).on('dragend',()=>pick(mk.getLatLng()));
+  $('st').className='status ok';$('st').lastChild.textContent='เลือกพิกัดแล้ว: '+cur.lat+', '+cur.lng;}
+map.on('click',e=>pick(e.latlng));
+$('me').onclick=()=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>{const ll={lat:p.coords.latitude,lng:p.coords.longitude};map.flyTo(ll,19);pick(ll);},()=>UI.toast('ไม่ได้รับอนุญาตใช้ตำแหน่ง','err'),{enableHighAccuracy:true,timeout:12000}):UI.toast('ไม่รองรับ','err');
+$('add').onclick=()=>{const n=$('nm').value.trim();if(!cur)return UI.toast('คลิกแผนที่เพื่อเลือกพิกัดก่อน','err');if(!n)return UI.toast('ตั้งชื่อจุดก่อน','err');
+  pts.push(Object.assign({n},cur));save();$('nm').value='';draw();UI.toast('เพิ่มป้ายแล้ว','ok');};
+const base=()=>location.href.split('?')[0].replace(/[^\/]*$/,'');
+function draw(){$('cards').innerHTML='';pts.forEach((p,i)=>{const c=document.createElement('div');c.className='pt';
+  c.innerHTML='<div class="school">🏫 โรงเรียนเดชะปัตตนยานุกูล</div><div class="sc">พบเหตุ? สแกนเพื่อแจ้งเหตุ</div><div class="qr"></div><h3></h3><div class="s">'+p.lat+', '+p.lng+'</div><button>ลบ</button>';
+  c.querySelector('h3').textContent=p.n;$('cards').appendChild(c);
+  new QRCode(c.querySelector('.qr'),{text:base()+'report.html?lat='+p.lat+'&lng='+p.lng+'&loc='+encodeURIComponent(p.n),width:170,height:170,colorDark:'#14306b',colorLight:'#fff'});
+  c.querySelector('button').onclick=()=>{pts.splice(i,1);save();draw();};});}
+draw();
+</script></body></html>

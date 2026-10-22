@@ -1,0 +1,61 @@
+/* ===== Responsive layer: มือถือ / แท็บเล็ต / เดสก์ท็อป ===== */
+html{-webkit-text-size-adjust:100%}
+.hud-btn{position:relative;width:40px;height:40px;border-radius:12px;border:1px solid var(--border);background:var(--glass);color:#fff;font-size:1.1rem;cursor:pointer;display:grid;place-items:center;flex:none;transition:.2s}
+.hud-btn:hover{background:rgba(255,255,255,.18);transform:translateY(-1px)}
+.hud-btn .bn{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--accent);color:#fff;font-size:.68rem;font-weight:700;place-items:center;box-shadow:0 0 0 2px var(--primary-dark);animation:bnpop .35s}
+.hud-btn.ring{animation:bring 1.6s ease-in-out infinite}
+@keyframes bring{0%,60%,100%{transform:rotate(0)}10%{transform:rotate(14deg)}20%{transform:rotate(-12deg)}30%{transform:rotate(9deg)}40%{transform:rotate(-6deg)}}
+@keyframes bnpop{from{transform:scale(0)}to{transform:scale(1)}}
+#hmenu{display:none}
+.pop-card{position:fixed;top:calc(var(--hud-h) + 8px);right:12px;width:min(360px,calc(100vw - 24px));max-height:calc(100dvh - var(--hud-h) - 24px);overflow:auto;z-index:1500;background:rgba(14,24,52,.97);backdrop-filter:blur(18px);border:1px solid var(--border);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.55);color:#fff;opacity:0;visibility:hidden;transform:translateY(-8px) scale(.97);transform-origin:top right;transition:.22s}
+.pop-card.open{opacity:1;visibility:visible;transform:none}
+.bp-h{display:flex;justify-content:space-between;align-items:center;padding:.85rem 1rem .5rem}
+.bp-h button{background:none;border:0;color:#9db4ff;font:inherit;font-size:.8rem;cursor:pointer}
+.bp-set{display:flex;flex-wrap:wrap;gap:.35rem .9rem;padding:0 1rem .4rem;font-size:.8rem}.bp-set label{display:flex;align-items:center;gap:.3rem;cursor:pointer}
+.bp-hint{padding:0 1rem .6rem;font-size:.72rem;opacity:.65;line-height:1.4}
+.bp-l{border-top:1px solid var(--border);max-height:48dvh;overflow:auto}
+.bp-i{display:flex;gap:.65rem;padding:.7rem 1rem;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s;animation:bnin .3s}
+.bp-i:hover{background:rgba(255,255,255,.07)}.bp-i.un{background:rgba(230,57,70,.14)}
+.bp-i .bi{font-size:1.3rem}.bp-i div{display:flex;flex-direction:column;min-width:0}.bp-i b{font-size:.88rem}.bp-i span{font-size:.8rem;opacity:.8;word-break:break-word}.bp-i small{opacity:.5;font-size:.7rem}
+.bp-e{padding:1.6rem 1rem;text-align:center;opacity:.65;font-size:.88rem}
+@keyframes bnin{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+.pop-card.menu{width:230px;padding:.4rem}
+.pop-card.menu a,.pop-card.menu button{display:flex;align-items:center;gap:.5rem;width:100%;padding:.75rem .85rem;border:0;background:none;color:#fff;text-decoration:none;font:inherit;font-size:.92rem;border-radius:10px;cursor:pointer;text-align:left}
+.pop-card.menu a:hover,.pop-card.menu button:hover{background:rgba(255,255,255,.1)}
+.sheet-handle{display:none}.mini{font-size:.78rem;opacity:.85;margin-left:auto;white-space:nowrap}
+html[data-theme=light] .pop-card{background:rgba(255,255,255,.98);color:#16203a}
+html[data-theme=light] .pop-card.menu a,html[data-theme=light] .pop-card.menu button{color:#16203a}
+html[data-theme=light] .hud-btn{color:#16203a}
+
+/* แท็บเล็ต / จอเล็ก */
+@media(max-width:1100px){:root{--panel-w:340px}.hud-link{display:none}#hmenu{display:grid}.btn-logout-map{display:none}}
+@media(max-width:900px){.hud-left{min-width:0}.hud-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+
+/* มือถือ: ลิ้นชักรายการด้านล่าง */
+@media(max-width:768px){
+  :root{--hud-h:56px;--sh:46dvh}
+  body[data-sheet=peek]{--sh:84px}body[data-sheet=half]{--sh:46dvh}body[data-sheet=full]{--sh:calc(100dvh - var(--hud-h) - 24px)}
+  .map-hud{padding:0 .7rem;gap:.5rem}.hud-right{gap:.45rem}#hud-tools{display:none}
+  .hud-title{font-size:.86rem}.hud-logo{height:34px;width:34px}
+  .side-panel{top:auto;bottom:0;width:100%;height:var(--sh);border-radius:20px 20px 0 0;border:1px solid var(--border);border-bottom:0;box-shadow:0 -10px 34px rgba(0,0,0,.45);padding-bottom:env(safe-area-inset-bottom);transition:height .34s cubic-bezier(.4,0,.2,1)}
+  body.no-panel .side-panel{transform:none}
+  .sheet-handle{display:grid;place-items:center;height:26px;flex:none;cursor:grab;touch-action:none}
+  .sheet-handle i{width:44px;height:5px;border-radius:3px;background:rgba(255,255,255,.35)}
+  html[data-theme=light] .sheet-handle i{background:rgba(0,0,0,.25)}
+  #map{right:0;bottom:var(--sh);transition:bottom .34s cubic-bezier(.4,0,.2,1)}body.no-panel #map{bottom:var(--sh)}
+  .map-fab{bottom:calc(var(--sh) + 14px);transition:bottom .34s}.map-fab.heat{bottom:calc(var(--sh) + 74px)}
+  body[data-sheet=full] .map-fab{display:none}
+  .pop-card{right:8px;left:8px;width:auto}
+  .leaflet-bottom{margin-bottom:var(--sh)}
+  .leaflet-control-zoom{display:none}
+}
+/* หน้าต่างป๊อปอัปชนิดฟอร์มเป็น bottom sheet บนจอเล็ก */
+@media(max-width:600px){
+  .modal{align-items:flex-end!important;padding:0!important}
+  .modal-box{width:100%!important;max-width:none!important;max-height:92dvh;border-radius:20px 20px 0 0!important;overflow:auto;animation:sheetup .3s}
+  @keyframes sheetup{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+}
+/* ปุ่มกดบนจอสัมผัส */
+@media(pointer:coarse){button,.btn,select,input:not([type=checkbox]):not([type=radio]){min-height:42px}input,select,textarea{font-size:16px!important}.hud-btn{width:44px;height:44px}}
+@supports(padding:max(0px)){.map-hud{padding-left:max(.7rem,env(safe-area-inset-left));padding-right:max(.7rem,env(safe-area-inset-right))}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}

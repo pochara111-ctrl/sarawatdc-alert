@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="th"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#14306b"/>
+<title>แจ้งเหตุ – โรงเรียนเดชะปัตตนยานุกูล</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="css/report.css"/>
+<link rel="stylesheet" href="css/ui.css"/>
+<style>.urg{display:flex;gap:.7rem;align-items:center;margin-top:.9rem;padding:.8rem .9rem;border:2px dashed #f3b4ba;background:#fff5f6;border-radius:14px;font-size:.85rem;cursor:pointer}.urg input{width:20px;height:20px;accent-color:#e63946;flex:none}.codebox{display:flex;align-items:center;gap:.7rem;background:#eef2fb;border-radius:14px;padding:.7rem 1rem;margin-bottom:.8rem}.codebox small{color:var(--mut);font-weight:700}.codebox b{font-size:1.5rem;letter-spacing:4px;color:var(--navy)}.codebox button{border:0;background:var(--navy);color:#fff;border-radius:10px;padding:.4rem .8rem;font:700 .8rem Sarabun;cursor:pointer}.trk-link{display:block;margin-bottom:1rem;color:var(--blue);font-weight:700;text-decoration:none}</style>
+</head><body>
+<header class="hero"><div class="hero-in">
+  <div class="logo"><img src="school-logo.png" alt="" onerror="this.remove()"/>🏫</div>
+  <div><h1>แจ้งเหตุในโรงเรียน</h1><p>โรงเรียนเดชะปัตตนยานุกูล • เจ้าหน้าที่ได้รับเรื่องทันที</p></div>
+</div></header>
+<main class="wrap">
+<div id="form-sec">
+  <input id="hp" style="position:absolute;left:-9999px" tabindex="-1" autocomplete="off" aria-hidden="true"/>
+  <section class="sec ui-stagger-card">
+    <div class="sec-h"><div class="sec-n">1</div><div><h2>ข้อมูลผู้แจ้ง</h2><small>เจ้าหน้าที่จะติดต่อกลับตามเบอร์นี้</small></div></div>
+    <div class="fg"><label class="lb">คุณเป็น</label>
+      <div class="seg" id="seg-role"><button type="button" class="on" data-v="นักเรียน">🎒 นักเรียน</button><button type="button" data-v="ครู">👩‍🏫 ครู</button><button type="button" data-v="บุคลากร">🧑‍💼 บุคลากร</button><button type="button" data-v="อื่นๆ">อื่นๆ</button></div>
+      <input type="hidden" id="f-role" value="นักเรียน"/></div>
+    <div class="row2">
+      <div class="fg"><label class="lb req" for="f-fn">ชื่อ</label><input id="f-fn" class="inp" maxlength="40" autocomplete="given-name"/></div>
+      <div class="fg"><label class="lb req" for="f-ln">นามสกุล</label><input id="f-ln" class="inp" maxlength="40" autocomplete="family-name"/></div>
+    </div>
+    <div class="fg"><label class="lb req" for="f-tel">เบอร์โทรติดต่อ</label><input id="f-tel" class="inp" type="tel" inputmode="tel" maxlength="15" autocomplete="tel" placeholder="08x-xxx-xxxx"/></div>
+    <div class="row2" id="stu-box">
+      <div class="fg"><label class="lb" for="f-cls">ชั้น / ห้อง</label><input id="f-cls" class="inp" maxlength="20" placeholder="เช่น ม.2/1"/></div>
+      <div class="fg"><label class="lb" for="f-sid">รหัสประจำตัว</label><input id="f-sid" class="inp" maxlength="20" inputmode="numeric"/></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-h"><div class="sec-n">2</div><div><h2>เกิดเหตุอะไร</h2><small>แตะเลือกประเภทเหตุ</small></div></div>
+    <div class="types" id="types">
+      <button type="button" class="ty" data-v="🤒 นักเรียนเจ็บป่วย"><i>🤒</i>นักเรียนเจ็บป่วย</button>
+      <button type="button" class="ty" data-v="🥊 ทะเลาะวิวาท"><i>🥊</i>ทะเลาะวิวาท</button>
+      <button type="button" class="ty" data-v="🚬 สูบบุหรี่ / บุหรี่ไฟฟ้า"><i>🚬</i>สูบบุหรี่ / บุหรี่ไฟฟ้า</button>
+      <button type="button" class="ty" data-v="📌 อื่นๆ"><i>📌</i>อื่นๆ</button>
+    </div>
+    <input type="hidden" id="f-type"/>
+    <label class="urg"><input type="checkbox" id="f-urgent"/><span><b>🔴 เหตุฉุกเฉิน</b> ต้องการความช่วยเหลือทันที (เช่น หมดสติ บาดเจ็บรุนแรง)</span></label>
+    <div class="fg" style="margin-top:1rem"><label class="lb" for="f-who">นักเรียนที่เกี่ยวข้อง (ถ้าทราบ)</label><input id="f-who" class="inp" placeholder="ชื่อ / ชั้น"/></div>
+    <div class="fg"><label class="lb" for="f-detail">รายละเอียดเพิ่มเติม</label><textarea id="f-detail" class="inp" rows="3" placeholder="เล่าเหตุการณ์สั้นๆ"></textarea></div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-h"><div class="sec-n">3</div><div><h2>เกิดเหตุที่ไหน</h2><small>กดปุ่มเพื่อปักหมุดตำแหน่งปัจจุบันอัตโนมัติ</small></div></div>
+    <button type="button" class="loc-btn" id="loc-btn"><span class="pin">📍</span><span id="loc-btn-t">ใช้ตำแหน่งปัจจุบันของฉัน</span></button>
+    <div class="mapbox"><div id="map"></div><button type="button" class="fab" id="fab" title="ตำแหน่งของฉัน" aria-label="ตำแหน่งของฉัน">🎯</button></div>
+    <div class="status" id="loc-box"><span class="dot"></span><span id="loc-status">ยังไม่ได้ปักหมุด — แตะบนแผนที่ หรือกดปุ่มด้านบน</span></div>
+    <div class="fg" style="margin-top:.9rem"><label class="lb" for="f-loc">รายละเอียดสถานที่</label><input id="f-loc" class="inp" placeholder="เช่น อาคาร 3 ชั้น 2 ห้องน้ำ / ห้อง ม.2/1"/></div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-h"><div class="sec-n">4</div><div><h2>แนบรูป</h2><small>ไม่เกิน 2 รูป (ไม่บังคับ)</small></div></div>
+    <label class="drop"><input type="file" id="f-photo" accept="image/*" multiple/>📷 ถ่ายรูป / เลือกรูปภาพ</label>
+    <div class="thumbs" id="thumbs"></div>
+  </section>
+
+  <section class="sec">
+    <label class="consent"><input type="checkbox" id="f-ok"/>
+      <span>ข้าพเจ้ายินยอมให้โรงเรียนเก็บข้อมูลส่วนบุคคล (ชื่อ เบอร์โทร ชั้น รหัสประจำตัว) รวมถึงที่อยู่ IP ตำแหน่งอุปกรณ์ และข้อมูลเบราว์เซอร์ เพื่อใช้ตรวจสอบและติดตามการแจ้งเหตุเท่านั้น โดยเจ้าหน้าที่ที่ได้รับอนุญาตเข้าถึงได้ <a href="privacy.html" target="_blank" style="color:var(--blue)">อ่านประกาศความเป็นส่วนตัว</a></span></label>
+  </section>
+  <div class="bar"><div class="bar-in"><div id="hint" class="ui-hint"></div><button class="btn-next" id="btn" disabled>🚨 แจ้งเหตุ</button></div></div>
+</div>
+<section id="ok-sec" class="success-sec" style="display:none">
+  <div id="ok-ic"></div><h2 class="ok-title">แจ้งเหตุสำเร็จ!</h2>
+  <p class="ok-desc">เจ้าหน้าที่ได้รับเรื่องแล้ว ขอบคุณที่แจ้ง</p>
+  <div class="codebox"><small>รหัสติดตามเรื่อง</small><b id="ok-code"></b><button type="button" onclick="UI.copy(window._code)">คัดลอก</button></div>
+  <a id="ok-trk" class="trk-link">ดูสถานะการดำเนินการ →</a>
+  <button class="btn-more" onclick="location.reload()">+ แจ้งเหตุใหม่</button></section>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/ui.js"></script><script src="js/fx.js"></script>
+<script src="js/config.js"></script>
+<script>const EN_D={"แจ้งเหตุในโรงเรียน": "Report an Incident", "โรงเรียนเดชะปัตตนยานุกูล • เจ้าหน้าที่ได้รับเรื่องทันที": "Dechapattanayanukul School • Staff are notified instantly", "ข้อมูลผู้แจ้ง": "Your details", "เจ้าหน้าที่จะติดต่อกลับตามเบอร์นี้": "Staff will call you back on this number", "คุณเป็น": "You are", "🎒 นักเรียน": "🎒 Student", "👩‍🏫 ครู": "👩‍🏫 Teacher", "🧑‍💼 บุคลากร": "🧑‍💼 Staff", "อื่นๆ": "Other", "ชื่อ": "First name", "นามสกุล": "Last name", "เบอร์โทรติดต่อ": "Phone number", "ชั้น / ห้อง": "Class / room", "รหัสประจำตัว": "Student ID", "เกิดเหตุอะไร": "What happened?", "แตะเลือกประเภทเหตุ": "Tap to choose the type", "นักเรียนเจ็บป่วย": "Student sick / injured", "ทะเลาะวิวาท": "Fight", "สูบบุหรี่ / บุหรี่ไฟฟ้า": "Smoking / vaping", "📌 อื่นๆ": "📌 Other", "เหตุฉุกเฉิน": "Emergency", "ต้องการความช่วยเหลือทันที (เช่น หมดสติ บาดเจ็บรุนแรง)": "Immediate help needed (e.g. unconscious, serious injury)", "นักเรียนที่เกี่ยวข้อง (ถ้าทราบ)": "Students involved (if known)", "ชื่อ / ชั้น": "Name / class", "รายละเอียดเพิ่มเติม": "More details", "เล่าเหตุการณ์สั้นๆ": "Briefly describe what happened", "เกิดเหตุที่ไหน": "Where?", "กดปุ่มเพื่อปักหมุดตำแหน่งปัจจุบันอัตโนมัติ": "Tap the button to pin your current location", "ใช้ตำแหน่งปัจจุบันของฉัน": "Use my current location", "ยังไม่ได้ปักหมุด — แตะบนแผนที่ หรือกดปุ่มด้านบน": "No pin yet — tap the map or the button above", "รายละเอียดสถานที่": "Place details", "เช่น อาคาร 3 ชั้น 2 ห้องน้ำ / ห้อง ม.2/1": "e.g. Building 3, 2nd floor toilet / Room M.2/1", "แนบรูป": "Attach photos", "ไม่เกิน 2 รูป (ไม่บังคับ)": "Up to 2 photos (optional)", "📷 ถ่ายรูป / เลือกรูปภาพ": "📷 Take / choose photos", "อ่านประกาศความเป็นส่วนตัว": "Read the privacy notice", "🚨 แจ้งเหตุ": "🚨 Report", "แจ้งเหตุสำเร็จ!": "Report sent!", "เจ้าหน้าที่ได้รับเรื่องแล้ว ขอบคุณที่แจ้ง": "Staff have received your report. Thank you.", "รหัสติดตามเรื่อง": "Tracking code", "คัดลอก": "Copy", "ดูสถานะการดำเนินการ →": "View progress →", "+ แจ้งเหตุใหม่": "+ New report", "ข้าพเจ้ายินยอมให้โรงเรียนเก็บข้อมูลส่วนบุคคล (ชื่อ เบอร์โทร ชั้น รหัสประจำตัว) รวมถึงที่อยู่ IP ตำแหน่งอุปกรณ์ และข้อมูลเบราว์เซอร์ เพื่อใช้ตรวจสอบและติดตามการแจ้งเหตุเท่านั้น โดยเจ้าหน้าที่ที่ได้รับอนุญาตเข้าถึงได้": "I consent to the school collecting my personal data (name, phone, class, student ID), IP address, device location and browser information solely to verify and follow up this report, accessible only to authorised staff."};
+Object.assign(EN_D,{'ยังต้องกรอก: ':'Still needed: ','ประเภทเหตุ':'Incident type','ปักหมุดบนแผนที่':'Pin on map','ติ๊กยินยอม':'Tick consent','เบอร์โทร':'Phone',
+ 'ใช้ตำแหน่งปัจจุบัน แม่นยำ':'Using current location, accuracy'});
+UI.i18n(EN_D);</script>
+<script>
+const $=id=>document.getElementById(id);
+let pos=null,marker=null,photos=[];
+const map=L.map('map').setView([SCHOOL.lat,SCHOOL.lng],SCHOOL.zoom);
+const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,attribution:'Esri'}).addTo(map);
+const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19});
+L.control.layers({'ภาพถ่ายดาวเทียม':sat,'แผนที่ถนน':osm}).addTo(map);
+const REQ=[['f-fn','ชื่อ'],['f-ln','นามสกุล'],['f-tel','เบอร์โทร']];
+const need=()=>{const miss=REQ.filter(([i])=>!$(i).value.trim()).map(r=>r[1]);
+  if(!$('f-type').value)miss.push('ประเภทเหตุ');if(!pos)miss.push('ปักหมุดบนแผนที่');if(!$('f-ok').checked)miss.push('ติ๊กยินยอม');
+  $('btn').disabled=miss.length>0;const h=$('hint');h.classList.toggle('hide',!miss.length);if(miss.length)h.textContent=UI.t('ยังต้องกรอก: ')+miss.map(UI.t).join(' • ');};
+function setPos(ll,txt,cls){pos={lat:ll.lat,lng:ll.lng};
+  if(marker)marker.setLatLng(ll);else{marker=L.marker(ll,{draggable:true}).addTo(map);
+    marker.on('dragend',()=>setPos(marker.getLatLng(),'📍 ย้ายหมุดแล้ว'));}
+  $('loc-status').textContent=txt;$('loc-box').className='status '+(cls||'ok');
+  $('loc-btn').classList.add('done');$('loc-btn-t').textContent='ปักหมุดแล้ว ✓ (กดเพื่อระบุตำแหน่งใหม่)';need();}
+let me=null,acc=null;
+function locate(auto){
+  if(!navigator.geolocation){if(!auto)UI.toast('อุปกรณ์นี้ไม่รองรับการระบุตำแหน่ง','err');return;}
+  const bt=$('loc-btn');if(!auto){bt.disabled=true;$('loc-btn-t').textContent='กำลังค้นหาตำแหน่ง…';}
+  navigator.geolocation.getCurrentPosition(p=>{
+    const ll={lat:p.coords.latitude,lng:p.coords.longitude},m=Math.round(p.coords.accuracy);
+    gpsv=ll.lat.toFixed(6)+','+ll.lng.toFixed(6)+' ±'+m+'m';bt.disabled=false;
+    const far=map.distance([SCHOOL.lat,SCHOOL.lng],ll)>1500;
+    if(far&&auto){$('loc-btn-t').textContent='ใช้ตำแหน่งปัจจุบันของฉัน';return;}
+    map.flyTo(ll,19,{duration:.9});
+    if(me)me.setLatLng(ll);else me=L.marker(ll,{icon:L.divIcon({className:'',html:'<div class="me-dot"></div>',iconSize:[18,18],iconAnchor:[9,9]}),interactive:false}).addTo(map);
+    if(acc)acc.setLatLng(ll).setRadius(m);else acc=L.circle(ll,{radius:m,color:'#2a5ad7',weight:1,fillOpacity:.1}).addTo(map);
+    setPos(ll,far?'⚠ ตำแหน่งของคุณอยู่นอกโรงเรียน (ลากหมุดเพื่อแก้ไข)':'ใช้ตำแหน่งปัจจุบัน แม่นยำ ±'+m+' ม. (ลากหมุดเพื่อแก้ไข)',far?'warn':'ok');
+    UI.toast(far?'ตำแหน่งอยู่นอกโรงเรียน ลองลากหมุดไปจุดเกิดเหตุ':'ปักหมุดตำแหน่งปัจจุบันให้แล้ว',{type:far?'info':'ok'});
+  },err=>{bt.disabled=false;if(!pos)$('loc-btn-t').textContent='ใช้ตำแหน่งปัจจุบันของฉัน';
+    if(!auto)UI.toast(err.code===1?'ไม่ได้รับอนุญาตใช้ตำแหน่ง — เปิดสิทธิ์ในเบราว์เซอร์ หรือแตะบนแผนที่':'หาตำแหน่งไม่พบ ลองแตะบนแผนที่แทน','err');},
+    {enableHighAccuracy:true,timeout:12000,maximumAge:0});}
+$('loc-btn').onclick=()=>locate(false);$('fab').onclick=()=>locate(false);
+map.on('click',e=>setPos(e.latlng,'📍 ปักหมุดแล้ว (ลากหมุดเพื่อแก้ไข)'));
+$('seg-role').onclick=e=>{const b=e.target.closest('button');if(!b)return;[...$('seg-role').children].forEach(x=>x.classList.toggle('on',x===b));$('f-role').value=b.dataset.v;$('stu-box').style.display=b.dataset.v==='นักเรียน'?'':'none';};
+$('types').onclick=e=>{const b=e.target.closest('.ty');if(!b)return;[...$('types').children].forEach(x=>x.classList.toggle('on',x===b));$('f-type').value=b.dataset.v;need();};
+['f-fn','f-ln','f-tel','f-ok','f-type'].forEach(i=>$(i).addEventListener('input',need));
+
+async function shrink(file){const b=await createImageBitmap(file),s=Math.min(1,1280/Math.max(b.width,b.height));
+  const c=document.createElement('canvas');c.width=b.width*s;c.height=b.height*s;
+  c.getContext('2d').drawImage(b,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.7);}
+$('f-photo').onchange=async e=>{photos=[];$('thumbs').innerHTML='';
+  for(const f of [...e.target.files].slice(0,2)){const d=await shrink(f);photos.push(d);
+    const i=new Image();i.src=d;$('thumbs').appendChild(i);}};
+
+$('btn').onclick=async()=>{
+  // 1) เตือนเมื่อปักหมุดนอกโรงเรียน
+  const far=map.distance([SCHOOL.lat,SCHOOL.lng],[pos.lat,pos.lng]),rad=SCHOOL.radius||450;
+  if(far>rad&&!await UI.confirm(UI.lang()==='en'?'The pin is outside the school. Report at this location anyway?':'หมุดอยู่นอกบริเวณโรงเรียน (ห่างประมาณ '+Math.round(far)+' ม.) ยืนยันแจ้งเหตุที่ตำแหน่งนี้?',{icon:'📍',yes:UI.lang()==='en'?'Yes, report':'ยืนยันแจ้ง',no:UI.lang()==='en'?'Move pin':'กลับไปแก้หมุด',lock:true,safe:true}))return;
+  UI.busy($('btn'),true,photos.length?'กำลังอัปโหลดรูป…':'กำลังส่ง…');
+  try{
+    // 2) กันแจ้งเหตุซ้ำ: มีเหตุใกล้เคียง (≤40 ม., 10 นาที) ที่ยังไม่ปิดหรือไม่
+    try{const nb=(await api('nearby',{lat:pos.lat,lng:pos.lng},true)).items;
+      if(nb.length){const n=nb[nb.length-1],mins=Math.max(1,Math.round((Date.now()-n.time)/60000));UI.busy($('btn'),false);
+        const same=await UI.confirm(UI.lang()==='en'?`Someone reported "${n.type.replace(/^\S+\s*/,'')}" nearby ${mins} min ago. Track that report, or file a new one?`:`มีคนแจ้งเหตุ "${n.type.replace(/^\S+\s*/,'')}" ใกล้จุดนี้เมื่อ ${mins} นาทีที่แล้ว ต้องการติดตามเรื่องเดิม หรือแจ้งใหม่?`,{icon:'🔁',yes:UI.lang()==='en'?'Track existing':'ติดตามเรื่องเดิม',no:UI.lang()==='en'?'It is a new incident':'เป็นเหตุใหม่ แจ้งต่อ',lock:true,safe:true});
+        if(same){location.href='track.html?c='+n.code;return;}
+        UI.busy($('btn'),true,'กำลังส่ง…');}}catch(e){}
+    const res=await api('report',{hp:$('hp').value,reporter:($('f-fn').value.trim()+' '+$('f-ln').value.trim()),phone:$('f-tel').value.trim(),cls:$('f-cls').value.trim(),sid:$('f-sid').value.trim(),ip:ipv,ua:navigator.userAgent,gps:gpsv,role:$('f-role').value,type:$('f-type').value,
+      location:$('f-loc').value.trim(),students:$('f-who').value.trim(),detail:$('f-detail').value.trim(),
+      lat:pos.lat,lng:pos.lng,photos,urgent:$('f-urgent').checked});
+    $('form-sec').style.display='none';$('ok-ic').innerHTML=UI.check();$('ok-code').textContent=res.code||'';$('ok-trk').href='track.html?c='+(res.code||'');window._code=res.code||'';$('ok-sec').style.display='flex';UI.toast('ส่งเรื่องให้เจ้าหน้าที่แล้ว','ok');UI.sound('ok');UI.confetti();
+  }catch(e){UI.busy($('btn'),false);UI.shake($('form-sec'));UI.toast('ส่งไม่สำเร็จ: '+e.message,'err');}};
+
+need();
+let ipv='',gpsv='';
+(function(){const q=new URLSearchParams(location.search),la=parseFloat(q.get('lat')),ln=parseFloat(q.get('lng')),lc=q.get('loc');
+  if(isFinite(la)&&isFinite(ln)){map.setView([la,ln],19);setPos({lat:la,lng:ln},'📍 ตำแหน่งจากป้าย QR'+(lc?': '+lc:'')+' (ลากหมุดเพื่อแก้ไข)');if(lc)$('f-loc').value=lc.slice(0,120);}})();
+(async()=>{try{const t=await (await fetch('/cdn-cgi/trace')).text();ipv=(t.match(/ip=(.+)/)||[])[1]||'';}catch(e){}
+ if(!ipv)try{ipv=(await (await fetch('https://api.ipify.org?format=json')).json()).ip;}catch(e){}})();
+if(navigator.permissions)navigator.permissions.query({name:'geolocation'}).then(r=>{if(r.state==='granted')locate(true);}).catch(()=>{});
+</script></body></html>
