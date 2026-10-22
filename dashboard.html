@@ -261,7 +261,10 @@ $('a-ok').onclick=async()=>{
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){clearInterval(tf);tf=null;document.title=BASE_T;}});
 function tick(){const n=new Date();$('clock').textContent=n.toLocaleTimeString('th-TH');$('date').textContent=n.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});}
 tick();setInterval(tick,1000);
-load();(function loop(){setTimeout(()=>{load().finally(loop);},document.hidden?20000:8000);})();   // แจ้งเตือนต่อเนื่องแม้แท็บอยู่เบื้องหลัง
+let curV=null,lastFull=Date.now();
+async function poll(){try{const j=await api('ping',{token},true);
+    if(j.v!==curV||Date.now()-lastFull>60000){curV=j.v;lastFull=Date.now();await load();}}catch(e){await load();}}
+load();(function loop(){setTimeout(()=>{poll().finally(loop);},document.hidden?10000:2500);})();   // ping เบาๆ ทุก 2.5 วินาที แล้วโหลดเมื่อมีการเปลี่ยนแปลงเท่านั้น   // แจ้งเตือนต่อเนื่องแม้แท็บอยู่เบื้องหลัง
 window.addEventListener('resize',()=>map.invalidateSize());
 $('heatb').onclick=()=>setHeat(!heatOn);
 $('mg-cancel').onclick=()=>$('mg-modal').style.display='none';
