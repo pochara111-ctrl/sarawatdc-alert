@@ -95,7 +95,9 @@ function setPos(ll,txt,cls){pos={lat:ll.lat,lng:ll.lng};
   if(marker)marker.setLatLng(ll);else{marker=L.marker(ll,{draggable:true}).addTo(map);
     marker.on('dragend',()=>setPos(marker.getLatLng(),'📍 ย้ายหมุดแล้ว'));}
   $('loc-status').textContent=txt;$('loc-box').className='status '+(cls||'ok');
-  $('loc-btn').classList.add('done');$('loc-btn-t').textContent='ปักหมุดแล้ว ✓ (กดเพื่อระบุตำแหน่งใหม่)';need();}
+  $('loc-btn').classList.add('done');$('loc-btn-t').textContent='ปักหมุดแล้ว ✓ (กดเพื่อระบุตำแหน่งใหม่)';need();prefetchNb();}
+let nbP=null,nbK='',nbT=null;
+function prefetchNb(){clearTimeout(nbT);nbT=setTimeout(()=>{if(!pos)return;nbK=pos.lat+','+pos.lng;nbP=api('nearby',{lat:pos.lat,lng:pos.lng},true).then(x=>x.items).catch(()=>[]);},700);}
 let me=null,acc=null;
 function locate(auto){
   if(!navigator.geolocation){if(!auto)UI.toast('อุปกรณ์นี้ไม่รองรับการระบุตำแหน่ง','err');return;}
@@ -130,20 +132,29 @@ $('btn').onclick=async()=>{
   // 1) เตือนเมื่อปักหมุดนอกโรงเรียน
   const far=map.distance([SCHOOL.lat,SCHOOL.lng],[pos.lat,pos.lng]),rad=SCHOOL.radius||450;
   if(far>rad&&!await UI.confirm(UI.lang()==='en'?'The pin is outside the school. Report at this location anyway?':'หมุดอยู่นอกบริเวณโรงเรียน (ห่างประมาณ '+Math.round(far)+' ม.) ยืนยันแจ้งเหตุที่ตำแหน่งนี้?',{icon:'📍',yes:UI.lang()==='en'?'Yes, report':'ยืนยันแจ้ง',no:UI.lang()==='en'?'Move pin':'กลับไปแก้หมุด',lock:true,safe:true}))return;
-  UI.busy($('btn'),true,photos.length?'กำลังอัปโหลดรูป…':'กำลังส่ง…');
+  UI.busy($('btn'),true,'กำลังส่ง…');
   try{
     // 2) กันแจ้งเหตุซ้ำ: มีเหตุใกล้เคียง (≤40 ม., 10 นาที) ที่ยังไม่ปิดหรือไม่
-    try{const nb=(await api('nearby',{lat:pos.lat,lng:pos.lng},true)).items;
+    try{const k=pos.lat+','+pos.lng;if(!nbP||nbK!==k){nbK=k;nbP=api('nearby',{lat:pos.lat,lng:pos.lng},true).then(x=>x.items).catch(()=>[]);}
+      const nb=await Promise.race([nbP,new Promise(z=>setTimeout(()=>z([]),2500))]);
       if(nb.length){const n=nb[nb.length-1],mins=Math.max(1,Math.round((Date.now()-n.time)/60000));UI.busy($('btn'),false);
         const same=await UI.confirm(UI.lang()==='en'?`Someone reported "${n.type.replace(/^\S+\s*/,'')}" nearby ${mins} min ago. Track that report, or file a new one?`:`มีคนแจ้งเหตุ "${n.type.replace(/^\S+\s*/,'')}" ใกล้จุดนี้เมื่อ ${mins} นาทีที่แล้ว ต้องการติดตามเรื่องเดิม หรือแจ้งใหม่?`,{icon:'🔁',yes:UI.lang()==='en'?'Track existing':'ติดตามเรื่องเดิม',no:UI.lang()==='en'?'It is a new incident':'เป็นเหตุใหม่ แจ้งต่อ',lock:true,safe:true});
         if(same){location.href='track.html?c='+n.code;return;}
         UI.busy($('btn'),true,'กำลังส่ง…');}}catch(e){}
     const res=await api('report',{hp:$('hp').value,reporter:($('f-fn').value.trim()+' '+$('f-ln').value.trim()),phone:$('f-tel').value.trim(),cls:$('f-cls').value.trim(),sid:$('f-sid').value.trim(),ip:ipv,ua:navigator.userAgent,gps:gpsv,role:$('f-role').value,type:$('f-type').value,
       location:$('f-loc').value.trim(),students:$('f-who').value.trim(),detail:$('f-detail').value.trim(),
-      lat:pos.lat,lng:pos.lng,photos,urgent:$('f-urgent').checked});
-    $('form-sec').style.display='none';$('ok-ic').innerHTML=UI.check();$('ok-code').textContent=res.code||'';$('ok-trk').href='track.html?c='+(res.code||'');window._code=res.code||'';$('ok-sec').style.display='flex';UI.toast('ส่งเรื่องให้เจ้าหน้าที่แล้ว','ok');UI.sound('ok');UI.confetti();
+      lat:pos.lat,lng:pos.lng,urgent:$('f-urgent').checked});
+    $('form-sec').style.display='none';$('ok-ic').innerHTML=UI.check();$('ok-code').textContent=res.code||'';$('ok-trk').href='track.html?c='+(res.code||'');window._code=res.code||'';$('ok-sec').style.display='flex';UI.toast('ส่งเรื่องให้เจ้าหน้าที่แล้ว','ok');UI.sound('ok');UI.confetti();sendPhotos(res);
   }catch(e){UI.busy($('btn'),false);UI.shake($('form-sec'));UI.toast('ส่งไม่สำเร็จ: '+e.message,'err');}};
 
+async function sendPhotos(res){if(!photos.length||!res.id)return;
+  const st=document.createElement('div');st.style.cssText='font-size:.88rem;margin:.5rem 0;color:#556;text-align:center';$('ok-trk').before(st);
+  const warn=e=>{e.preventDefault();e.returnValue='';};window.addEventListener('beforeunload',warn);let ok=0;
+  for(let i=0;i<photos.length;i++){st.textContent='📷 กำลังส่งรูป '+(i+1)+'/'+photos.length+' (อย่าเพิ่งปิดหน้านี้)';
+    try{await api('reportPhoto',{id:res.id,code:res.code,photo:photos[i]},true);ok++;}catch(e){}}
+  window.removeEventListener('beforeunload',warn);
+  st.textContent=ok===photos.length?'📷 ส่งรูปครบแล้ว ✓':'⚠ ส่งรูปได้ '+ok+'/'+photos.length+' (เจ้าหน้าที่ได้รับเรื่องแล้ว)';}
+api('warm',{},true).catch(()=>{});
 need();
 let ipv='',gpsv='';
 (function(){const q=new URLSearchParams(location.search),la=parseFloat(q.get('lat')),ln=parseFloat(q.get('lng')),lc=q.get('loc');
