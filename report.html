@@ -84,8 +84,8 @@ UI.i18n(EN_D);</script>
 const $=id=>document.getElementById(id);
 let pos=null,marker=null,photos=[];
 const map=L.map('map').setView([SCHOOL.lat,SCHOOL.lng],SCHOOL.zoom);
-const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,attribution:'Esri'}).addTo(map);
-const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19});
+const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:18,attribution:'Esri'}).addTo(map);
+const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,maxNativeZoom:19,attribution:'© OpenStreetMap'});
 L.control.layers({'ภาพถ่ายดาวเทียม':sat,'แผนที่ถนน':osm}).addTo(map);
 const REQ=[['f-fn','ชื่อ'],['f-ln','นามสกุล'],['f-tel','เบอร์โทร']];
 const need=()=>{const miss=REQ.filter(([i])=>!$(i).value.trim()).map(r=>r[1]);
